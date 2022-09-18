@@ -4,8 +4,8 @@ import de.matthiasfisch.audiodragon.util.AudioMetricsUtil
 import de.matthiasfisch.audiodragon.util.durationToByteCount
 import de.matthiasfisch.audiodragon.util.getEffectiveFrameRate
 import de.matthiasfisch.audiodragon.util.getEffectiveFrameSize
-import java.util.*
 import javax.sound.sampled.AudioFormat
+import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -24,7 +24,7 @@ fun PcmData.duration(audioFormat: AudioFormat): Duration {
 fun PcmData.timeSlice(audioFormat: AudioFormat, offset: Duration, length: Duration): PcmData {
     val byteOffset = audioFormat.durationToByteCount(offset).toInt()
     val byteLength = audioFormat.durationToByteCount(length).toInt()
-    return this.slice(byteOffset until (byteOffset + byteLength)).toByteArray()
+    return this.slice(byteOffset until min(size, byteOffset + byteLength)).toByteArray()
 }
 
 fun PcmData.getRMS(audioFormat: AudioFormat): Double = AudioMetricsUtil.getRMS(this, audioFormat)

@@ -1,15 +1,20 @@
-package de.matthiasfisch.audiodragon.model.buffer
+package de.matthiasfisch.audiodragon.buffer
 
-import de.matthiasfisch.audiodragon.buffer.DiskSpillingAudioBuffer
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import javax.sound.sampled.AudioFormat
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 private const val IN_MEMORY_BUFFER_SIZE = 50
-private val AUDIO_FORMAT = AudioFormat(100f, 16, 2, true, true)
+private const val SAMPLE_RATE = 100
+private const val SAMPLE_SIZE_BYTES = 2
+private const val CHANNELS = 2
+private val AUDIO_FORMAT = AudioFormat(SAMPLE_RATE.toFloat(), SAMPLE_SIZE_BYTES * 8, CHANNELS, true, true)
 
 class DiskSpillingAudioBufferTest : FunSpec({
 
@@ -167,6 +172,119 @@ class DiskSpillingAudioBufferTest : FunSpec({
 
             // Act
             subject.size() shouldBe 120
+        }
+    }
+
+    context("get time-slice") {
+        test("Slice until end is retrievable") {
+            // Arrange
+            val subject = DiskSpillingAudioBuffer(AUDIO_FORMAT, IN_MEMORY_BUFFER_SIZE)
+            val bytesPerSecond = SAMPLE_RATE * SAMPLE_SIZE_BYTES * CHANNELS
+            val data = generatePcmData(10 * bytesPerSecond) // 10 seconds
+            subject.add(data)
+
+            // Act
+            val result = subject.get(4.seconds).toArray()
+
+            // Assert
+            result shouldBe data.slice(4 * bytesPerSecond until 10 * bytesPerSecond)
+        }
+
+        test("Slice from start is retrievable") {
+            // Arrange
+            val subject = DiskSpillingAudioBuffer(AUDIO_FORMAT, IN_MEMORY_BUFFER_SIZE)
+            val bytesPerSecond = SAMPLE_RATE * SAMPLE_SIZE_BYTES * CHANNELS
+            val data = generatePcmData(10 * bytesPerSecond) // 10 seconds
+            subject.add(data)
+
+            // Act
+            val result = subject.get(0.seconds).toArray()
+
+            // Assert
+            result shouldBe data
+        }
+
+        test("Slice starting at higher resolution than sample rate is retrievable") {
+            // Arrange
+            val subject = DiskSpillingAudioBuffer(AUDIO_FORMAT, IN_MEMORY_BUFFER_SIZE)
+            val bytesPerSecond = SAMPLE_RATE * SAMPLE_SIZE_BYTES * CHANNELS
+            val data = generatePcmData(10 * bytesPerSecond) // 10 seconds
+            subject.add(data)
+
+            // Act
+            val result = subject.get(4.seconds + 5.milliseconds).toArray()
+
+            // Assert
+            result shouldBe data.slice(4 * bytesPerSecond until 10 * bytesPerSecond)
+        }
+
+        test("Slice with length is retrievable") {
+            // Arrange
+            val subject = DiskSpillingAudioBuffer(AUDIO_FORMAT, IN_MEMORY_BUFFER_SIZE)
+            val bytesPerSecond = SAMPLE_RATE * SAMPLE_SIZE_BYTES * CHANNELS
+            val data = generatePcmData(10 * bytesPerSecond) // 10 seconds
+            subject.add(data)
+
+            // Act
+            val result = subject.get(4.seconds, 1.seconds).toArray()
+
+            // Assert
+            result shouldBe data.slice(4 * bytesPerSecond until 5 * bytesPerSecond)
+        }
+
+        test("Slice with zero length is empty") {
+            // Arrange
+            val subject = DiskSpillingAudioBuffer(AUDIO_FORMAT, IN_MEMORY_BUFFER_SIZE)
+            val bytesPerSecond = SAMPLE_RATE * SAMPLE_SIZE_BYTES * CHANNELS
+            val data = generatePcmData(10 * bytesPerSecond) // 10 seconds
+            subject.add(data)
+
+            // Act
+            val result = subject.get(4.seconds, 0.seconds).toArray()
+
+            // Assert
+            result.shouldBeEmpty()
+        }
+
+        test("Slice with length overlapping end is retrievable") {
+            // Arrange
+            val subject = DiskSpillingAudioBuffer(AUDIO_FORMAT, IN_MEMORY_BUFFER_SIZE)
+            val bytesPerSecond = SAMPLE_RATE * SAMPLE_SIZE_BYTES * CHANNELS
+            val data = generatePcmData(10 * bytesPerSecond) // 10 seconds
+            subject.add(data)
+
+            // Act
+            val result = subject.get(9.seconds, 3.seconds).toArray()
+
+            // Assert
+            result shouldBe data.slice(9 * bytesPerSecond until 10 * bytesPerSecond)
+        }
+    }
+
+    context("duration") {
+        test("Correct duration is returned for non-empty buffer") {
+            // Arrange
+            val subject = DiskSpillingAudioBuffer(AUDIO_FORMAT, IN_MEMORY_BUFFER_SIZE)
+            val bytesPerSecond = SAMPLE_RATE * SAMPLE_SIZE_BYTES * CHANNELS
+            val data = generatePcmData((3.25 * bytesPerSecond).toInt())
+            subject.add(data)
+
+            // Act
+            val result = subject.duration()
+
+            // Assert
+            result shouldBe 3250.milliseconds
+        }
+
+        test("Correct duration is returned for empty buffer") {
+            // Arrange
+            val subject = DiskSpillingAudioBuffer(AUDIO_FORMAT, IN_MEMORY_BUFFER_SIZE)
+
+            // Act
+            val result = subject.duration()
+
+            // Assert
+            result shouldBe 0.milliseconds
         }
     }
 })

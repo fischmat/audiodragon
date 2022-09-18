@@ -71,7 +71,7 @@ class DiskSpillingAudioBuffer(private val audioFormat: AudioFormat, private val 
 
     override fun get(offset: Duration, length: Duration?): Stream<Byte> {
         val offsetInBytes = audioFormat.durationToByteCount(offset)
-        val lengthInBytes = length?.let { offsetInBytes + audioFormat.durationToByteCount(it) }
+        val lengthInBytes = length?.let { audioFormat.durationToByteCount(it) }
         val streamWithOffset = get().skip(offsetInBytes)
         return lengthInBytes?.let { streamWithOffset.limit(it) } ?: streamWithOffset
     }
