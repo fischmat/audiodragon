@@ -13,17 +13,17 @@ import javax.sound.sampled.AudioSystem
 private val LOGGER = KotlinLogging.logger {}
 private const val DEFAULT_BLOCK_SIZE = 2048
 
-fun AudioSource.record(audioFormat: AudioFormat, bufferFactory: () -> AudioBuffer, blockSize: Int = 2048) =
+fun AudioSource.record(audioFormat: AudioFormat, bufferFactory: (AudioFormat) -> AudioBuffer, blockSize: Int = 2048) =
     Recording(this, audioFormat, bufferFactory, blockSize)
 
 open class Recording(
-    private val audioSource: AudioSource,
-    private val audioFormat: AudioFormat,
-    bufferFactory: () -> AudioBuffer,
+    val audioSource: AudioSource,
+    val audioFormat: AudioFormat,
+    bufferFactory: (AudioFormat) -> AudioBuffer,
     private val blockSize: Int,
 ) : Thread() {
     private val chunkPublisher = PublishProcessor.create<AudioChunk>()
-    private val audioBuffer = ResettableAudioBuffer(bufferFactory)
+    private val audioBuffer = ResettableAudioBuffer { bufferFactory(audioFormat) }
 
     init {
         check(blockSize > 0) { "Block size must be positive." }

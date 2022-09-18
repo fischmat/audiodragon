@@ -12,7 +12,9 @@ import kotlin.math.min
 import kotlin.streams.asStream
 import kotlin.time.Duration
 
-class DiskSpillingAudioBuffer(private val audioFormat: AudioFormat, private val inMemoryBufferMaxSize: Int) : AudioBuffer {
+const val DEFAULT_MAX_IN_MEMORY_BUFFER_SIZE = 128 * 1024 * 1024 // 128MB
+
+class DiskSpillingAudioBuffer(private val audioFormat: AudioFormat, private val inMemoryBufferMaxSize: Int = DEFAULT_MAX_IN_MEMORY_BUFFER_SIZE) : AudioBuffer {
     private val spillFile = Files.createTempFile("audiodragon", "audio_buffer").toFile()
     private val out = FileOutputStream(spillFile)
     private val buffer = ByteArrayOutputStream(inMemoryBufferMaxSize)

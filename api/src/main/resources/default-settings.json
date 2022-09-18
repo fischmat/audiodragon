@@ -1,0 +1,16 @@
+{
+  "recognition": {
+    "recognizer": "shazam",
+    "rapidApiToken": "",
+    "secondsUntilRecognition": 20,
+    "sampleSeconds": 5,
+    "maxRetries": 3
+  },
+  "splitting": {
+    "splitAfterSilenceMillis": 350,
+    "silenceRmsTolerance": 0.0
+  },
+  "output": {
+    "location": "~/Music/AudioDragon"
+  }
+}

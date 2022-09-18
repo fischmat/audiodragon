@@ -16,3 +16,10 @@ class AudioSource(val mixer: Mixer) {
             .distinct()
     }
 }
+
+fun getRecordableAudioSources() = AudioSystem.getMixerInfo()
+    .map { AudioSystem.getMixer(it) }
+    .filter { isRecordable(it) }
+    .map { AudioSource(it) }
+
+private fun isRecordable(mixer: Mixer) = mixer.targetLineInfo.filterIsInstance<DataLine.Info>().isNotEmpty()

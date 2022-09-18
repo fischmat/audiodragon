@@ -16,7 +16,7 @@ private val LOGGER = KotlinLogging.logger {}
 abstract class TrackRecognizer(delayUntilRecognition: Duration, private val sampleDuration: Duration,  private val maxRetriesForRecognition: Int) {
     private val delayedExecutor = CompletableFuture.delayedExecutor(delayUntilRecognition.inWholeMilliseconds, TimeUnit.MILLISECONDS)
 
-    fun recognizeTrack(audioProvider: () -> AudioBuffer) =
+    fun recognizeTrack(audioProvider: () -> AudioBuffer): CompletableFuture<TrackData?> =
         CompletableFuture.supplyAsync({ recognizeTrack(audioProvider, listOf()) }, delayedExecutor)
             .thenCompose { it }
 

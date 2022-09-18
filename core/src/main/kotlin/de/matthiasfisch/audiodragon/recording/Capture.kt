@@ -19,7 +19,7 @@ class Capture private constructor(
     companion object {
         fun AudioSource.capture(
             audioFormat: AudioFormat,
-            bufferFactory: () -> AudioBuffer,
+            bufferFactory: (AudioFormat) -> AudioBuffer,
             trackBoundsDetector: TrackBoundsDetector,
             trackRecognizer: TrackRecognizer,
             fileWriter: AudioFileWriter,
@@ -37,6 +37,9 @@ class Capture private constructor(
     private var trackData: TrackData? = null
     private val trackDataLock = ReentrantLock()
     private var stopRequested = false
+
+    val audioSource = recording.audioSource
+    val audioFormat = recording.audioFormat
 
     init {
         recording.toFlowable()
@@ -63,8 +66,13 @@ class Capture private constructor(
         stopRequested = true
     }
 
+    fun currentTrack() = trackData
+
+    fun stopAfterTrackRequested() = stopRequested
+
     fun mergeTrackData(trackDataToMerge: TrackData) = trackDataLock.withLock {
         trackData = if (trackData == null) trackDataToMerge else trackData!!.merge(trackDataToMerge)
+        trackData!!
     }
 
     private fun onTrackStarted() {
