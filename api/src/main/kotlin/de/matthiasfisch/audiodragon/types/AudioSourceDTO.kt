@@ -22,11 +22,9 @@ data class AudioSourceDTO(
 
 data class AudioFormatDTO(
     val encoding: AudioEncodingDTO,
-    val sampleRate: Float,
+    val sampleRate: Float = -1f,
     val sampleSizeInBits: Int,
     val channels: Int,
-    val frameSize: Int,
-    val frameRate: Float,
     val bigEndian: Boolean
 ) {
     constructor(audioFormat: AudioFormat): this(
@@ -34,8 +32,6 @@ data class AudioFormatDTO(
         audioFormat.sampleRate,
         audioFormat.sampleSizeInBits,
         audioFormat.channels,
-        audioFormat.frameSize,
-        audioFormat.frameRate,
         audioFormat.isBigEndian
     )
 
@@ -44,8 +40,8 @@ data class AudioFormatDTO(
         sampleRate,
         sampleSizeInBits,
         channels,
-        frameSize,
-        frameRate,
+        channels * (sampleSizeInBits / 8),
+        sampleRate,
         bigEndian
     )
 }
