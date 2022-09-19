@@ -3,7 +3,6 @@ package de.matthiasfisch.audiodragon.service
 import de.matthiasfisch.audiodragon.buffer.DiskSpillingAudioBuffer
 import de.matthiasfisch.audiodragon.exception.CaptureOngoingException
 import de.matthiasfisch.audiodragon.exception.NoCaptureOngoingException
-import de.matthiasfisch.audiodragon.recognition.TrackRecognizer
 import de.matthiasfisch.audiodragon.recognition.shazam.RapidApiShazamTrackRecognizer
 import de.matthiasfisch.audiodragon.recording.AudioSource
 import de.matthiasfisch.audiodragon.recording.Capture
@@ -12,6 +11,8 @@ import de.matthiasfisch.audiodragon.splitting.TrackBoundsDetector
 import de.matthiasfisch.audiodragon.types.FileOutputOptionsDTO
 import de.matthiasfisch.audiodragon.types.MP3OptionsDTO
 import de.matthiasfisch.audiodragon.types.ShazamRecognitionSettings
+import de.matthiasfisch.audiodragon.util.AudioSourceId
+import de.matthiasfisch.audiodragon.util.getId
 import de.matthiasfisch.audiodragon.writer.MP3FileWriter
 import org.springframework.stereotype.Service
 import java.nio.file.Paths
@@ -20,12 +21,12 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 @Service
-class CaptureService(val settingsService: SettingsService) {
-    private val ongoingCaptures = mutableMapOf<AudioSource, Capture>()
+class CaptureService(val settingsService: SettingsService, val captureEventBroker: CaptureEventBroker) {
+    private val ongoingCaptures = mutableMapOf<AudioSourceId, Capture>()
     private val bufferFactory = { format: AudioFormat -> DiskSpillingAudioBuffer(format) }
 
     fun startCapture(audioSource: AudioSource, audioFormat: AudioFormat, recognizeSongs: Boolean, fileOutputOptions: FileOutputOptionsDTO) = synchronized(ongoingCaptures) {
-        if (ongoingCaptures.containsKey(audioSource)) {
+        if (ongoingCaptures.containsKey(audioSource.getId())) {
             throw CaptureOngoingException(audioSource)
         }
 
@@ -44,24 +45,24 @@ class CaptureService(val settingsService: SettingsService) {
             capture.start()
             capture
         }.also {
-            ongoingCaptures[audioSource] = it
+            ongoingCaptures[audioSource.getId()] = it
         }
     }
 
-    fun getOngoingCapture(audioSource: AudioSource) = synchronized(ongoingCaptures) { ongoingCaptures[audioSource] }
+    fun getOngoingCapture(audioSource: AudioSource) = synchronized(ongoingCaptures) { ongoingCaptures[audioSource.getId()] }
 
     fun stopCapture(audioSource: AudioSource) = synchronized(ongoingCaptures) {
-        val capture = ongoingCaptures[audioSource] ?: throw NoCaptureOngoingException(audioSource)
+        val capture = ongoingCaptures[audioSource.getId()] ?: throw NoCaptureOngoingException(audioSource)
         capture.stop()
     }
 
     fun stopCaptureAfterCurrentTrack(audioSource: AudioSource) = synchronized(ongoingCaptures) {
-        val capture = ongoingCaptures[audioSource] ?: throw NoCaptureOngoingException(audioSource)
+        val capture = ongoingCaptures[audioSource.getId()] ?: throw NoCaptureOngoingException(audioSource)
         capture.stopAfterTrack()
     }
 
     fun isCaptureStoppedAfterCurrentTrack(audioSource: AudioSource) = synchronized(ongoingCaptures) {
-        val capture = ongoingCaptures[audioSource] ?: throw NoCaptureOngoingException(audioSource)
+        val capture = ongoingCaptures[audioSource.getId()] ?: throw NoCaptureOngoingException(audioSource)
         capture.stopAfterTrackRequested()
     }
 }
