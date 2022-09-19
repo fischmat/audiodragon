@@ -4,9 +4,15 @@ import de.matthiasfisch.audiodragon.util.AudioMetricsUtil
 import de.matthiasfisch.audiodragon.util.durationToByteCount
 import de.matthiasfisch.audiodragon.util.getEffectiveFrameRate
 import de.matthiasfisch.audiodragon.util.getEffectiveFrameSize
+import java.lang.IllegalArgumentException
+import java.math.BigInteger
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import javax.sound.sampled.AudioFormat
 import kotlin.math.min
+import kotlin.math.pow
 import kotlin.math.roundToInt
+import kotlin.math.sqrt
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -27,6 +33,61 @@ fun PcmData.timeSlice(audioFormat: AudioFormat, offset: Duration, length: Durati
     return this.slice(byteOffset until min(size, byteOffset + byteLength)).toByteArray()
 }
 
-fun PcmData.getRMS(audioFormat: AudioFormat): Double = AudioMetricsUtil.getRMS(this, audioFormat)
-
 fun PcmData.getFrequencies(audioFormat: AudioFormat) = AudioMetricsUtil.getFrequencies(this, audioFormat)
+
+fun PcmData.getRMS(audioFormat: AudioFormat) = getRMSPerChannel(audioFormat).average()
+
+fun PcmData.getRMSPerChannel(audioFormat: AudioFormat) = floatsPerChannel(audioFormat).map { frame ->
+    sqrt(frame.map { it * it }.sum() / frame.size)
+}
+
+fun PcmData.floatsPerChannel(audioFormat: AudioFormat): List<List<Float>> {
+    val maxPossibleValue = 2f.pow(audioFormat.sampleSizeInBits - 1) - 1
+    val frames = toDiscreteFrames(audioFormat).map { frame ->
+        frame.map { it / maxPossibleValue }
+    }
+    return transpose(frames)
+}
+
+fun PcmData.toDiscreteFrames(audioFormat: AudioFormat): List<List<Long>> {
+    val byteOrder = if (audioFormat.isBigEndian) ByteOrder.BIG_ENDIAN else ByteOrder.LITTLE_ENDIAN
+    val pcmBuffer = ByteBuffer.wrap(this).order(byteOrder)
+
+    val framesInSample = this.size / audioFormat.frameSize
+    return (0 until framesInSample).map { getNextFrame(pcmBuffer, audioFormat) }
+}
+
+private fun getNextFrame(pcmBuffer: ByteBuffer, audioFormat: AudioFormat): List<Long> {
+    val sampleSizeInBytes = audioFormat.sampleSizeInBits / 8
+    val isSigned = when(audioFormat.encoding) {
+        AudioFormat.Encoding.PCM_UNSIGNED -> false
+        AudioFormat.Encoding.PCM_SIGNED -> true
+        else -> throw IllegalArgumentException("Unsupported encoding ${audioFormat.encoding}.")
+    }
+
+    return (1..audioFormat.channels).map {
+        val sampleBytes = ByteArray(sampleSizeInBytes)
+        pcmBuffer.get(sampleBytes, 0, sampleSizeInBytes)
+        bytesToLong(sampleBytes, audioFormat.isBigEndian, isSigned)
+    }
+}
+
+fun bytesToLong(bytes: ByteArray, bigEndian: Boolean, signed: Boolean): Long {
+    val bytesBE = if (bigEndian) bytes else bytes.reversedArray()
+    // In case the value is unsigned, prepend 0x00 to ensure that we end up with a positive value (msb = 0 indicates positive value in twos complement)
+    val padded = if (signed) bytesBE else arrayOf(0x00.toByte()).plus(bytesBE.toTypedArray()).toByteArray()
+    return BigInteger(padded).toLong()
+}
+
+private fun <E> transpose(xs: List<List<E>>): List<List<E>> {
+    fun <E> List<E>.head(): E = this.first()
+    fun <E> List<E>.tail(): List<E> = this.takeLast(this.size - 1)
+    fun <E> E.append(xs: List<E>): List<E> = listOf(this).plus(xs)
+
+    xs.filter { it.isNotEmpty() }.let { ys ->
+        return when (ys.isNotEmpty()) {
+            true -> ys.map { it.head() }.append(transpose(ys.map { it.tail() }))
+            else -> emptyList()
+        }
+    }
+}

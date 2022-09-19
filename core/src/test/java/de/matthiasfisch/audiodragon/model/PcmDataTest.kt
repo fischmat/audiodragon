@@ -16,6 +16,20 @@ class PcmDataTest : FunSpec({
 
     fun generatePcmData(size: Int) = ByteArray(size) { (it % Byte.MAX_VALUE).toByte() }
 
+    fun toBytes(value: Long, targetBits: Int, bigEndian: Boolean): List<Byte> {
+        var bytes = value.toBigInteger()
+            .toByteArray()
+            .toList()
+        while (bytes.size < targetBits / 8) {
+            bytes = if (bytes.size + 1 == targetBits / 8) {
+                listOf(if (value >= 0) 0x00.toByte() else 0xff.toByte()) + bytes
+            } else {
+                listOf(0x00.toByte()) + bytes
+            }
+        }
+        return bytes.let { if (bigEndian) it else it.reversed() }
+    }
+
     context("duration") {
         test("Duration for empty data is zero") {
             // Arrange
@@ -85,6 +99,137 @@ class PcmDataTest : FunSpec({
 
             // Assert
             result shouldBe ByteArray(0)
+        }
+    }
+
+    context("toDiscreteFrames") {
+        test("Correct result for big endian data, standard word size, unsigned encoding") {
+            // Arrange
+            val values = listOf(
+                listOf(1331, 256),
+                listOf(0, 138)
+            )
+            val pcmData = values.flatMap { frame ->
+                frame.flatMap { toBytes(it.toLong(), targetBits = 16, bigEndian = true) }
+            }.toByteArray()
+            val audioFormat = AudioFormat(AudioFormat.Encoding.PCM_UNSIGNED, 44000f, 16, 2, 4, 44000f, true)
+
+            // Act
+            val result = pcmData.toDiscreteFrames(audioFormat)
+
+            // Assert
+            result shouldBe values
+        }
+
+        test("Correct result for little endian data, standard word size, unsigned encoding") {
+            // Arrange
+            val values = listOf(
+                listOf(1331, 256),
+                listOf(0, 138)
+            )
+            val pcmData = values.flatMap { frame ->
+                frame.flatMap { toBytes(it.toLong(), targetBits = 16, bigEndian = false) }
+            }.toByteArray()
+            val audioFormat = AudioFormat(AudioFormat.Encoding.PCM_UNSIGNED, 44000f, 16, 2, 4, 44000f, false)
+
+            // Act
+            val result = pcmData.toDiscreteFrames(audioFormat)
+
+            // Assert
+            result shouldBe values
+        }
+
+        test("Correct result for big endian data, non-standard word size, unsigned encoding") {
+            // Arrange
+            val values = listOf(
+                listOf(1331, 256),
+                listOf(0, 138)
+            )
+            val pcmData = values.flatMap { frame ->
+                frame.flatMap { toBytes(it.toLong(), targetBits = 24, bigEndian = true) }
+            }.toByteArray()
+            val audioFormat = AudioFormat(AudioFormat.Encoding.PCM_UNSIGNED, 44000f, 24, 2, 6, 44000f, true)
+
+            // Act
+            val result = pcmData.toDiscreteFrames(audioFormat)
+
+            // Assert
+            result shouldBe values
+        }
+
+        test("Correct result for little endian data, non-standard word size, unsigned encoding") {
+            // Arrange
+            val values = listOf(
+                listOf(1331, 256),
+                listOf(0, 138)
+            )
+            val pcmData = values.flatMap { frame ->
+                frame.flatMap { toBytes(it.toLong(), targetBits = 24, bigEndian = false) }
+            }.toByteArray()
+            val audioFormat = AudioFormat(AudioFormat.Encoding.PCM_UNSIGNED, 44000f, 24, 2, 6, 44000f, false)
+
+            // Act
+            val result = pcmData.toDiscreteFrames(audioFormat)
+
+            // Assert
+            result shouldBe values
+        }
+
+        test("Correct result for big endian data, standard word size, signed encoding") {
+            // Arrange
+            val values = listOf(
+                listOf(-1, -125),
+                listOf(1331, 256),
+                listOf(0, 138)
+            )
+            val pcmData = values.flatMap { frame ->
+                frame.flatMap { toBytes(it.toLong(), targetBits = 16, bigEndian = true) }
+            }.toByteArray()
+            val audioFormat = AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 44000f, 16, 2, 4, 44000f, true)
+
+            // Act
+            val result = pcmData.toDiscreteFrames(audioFormat)
+
+            // Assert
+            result shouldBe values
+        }
+
+        test("Correct result for little endian data, standard word size, signed encoding") {
+            // Arrange
+            val values = listOf(
+                listOf(-1, -125),
+                listOf(1331, 256),
+                listOf(0, 138)
+            )
+            val pcmData = values.flatMap { frame ->
+                frame.flatMap { toBytes(it.toLong(), targetBits = 16, bigEndian = false) }
+            }.toByteArray()
+            val audioFormat = AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 44000f, 16, 2, 4, 44000f, false)
+
+            // Act
+            val result = pcmData.toDiscreteFrames(audioFormat)
+
+            // Assert
+            result shouldBe values
+        }
+
+        test("Correct result for big endian data, non-standard word size, signed encoding") {
+            // Arrange
+            val values = listOf(
+                listOf(-1, -125),
+                listOf(1331, 256),
+                listOf(0, 138)
+            )
+            val pcmData = values.flatMap { frame ->
+                frame.flatMap { toBytes(it.toLong(), targetBits = 16, bigEndian = true) }
+            }.toByteArray()
+            val audioFormat = AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 44000f, 16, 2, 4, 44000f, true)
+
+            // Act
+            val result = pcmData.toDiscreteFrames(audioFormat)
+
+            // Assert
+            result shouldBe values
         }
     }
 })
