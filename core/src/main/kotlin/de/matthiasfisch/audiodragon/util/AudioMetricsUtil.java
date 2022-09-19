@@ -33,7 +33,7 @@ public class AudioMetricsUtil {
         return Math.sqrt(sumOfSquares / doubles.length);
     }
 
-    public double[] getFrequencies(byte[] audioData, AudioFormat format) {
+    public static double[] getFrequencies(byte[] audioData, AudioFormat format) {
         long[] frameValues = convertByteArray(audioData, format);
         final double maxPossibleValue = Math.pow(2, format.getSampleSizeInBits() - 1) - 1;
         final float[] floats = new float[frameValues.length];

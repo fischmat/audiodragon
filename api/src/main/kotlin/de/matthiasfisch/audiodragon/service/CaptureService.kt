@@ -39,7 +39,10 @@ class CaptureService(val settingsService: SettingsService) {
                 is MP3OptionsDTO -> MP3FileWriter(Paths.get(output.location), fileOutputOptions.bitRate, fileOutputOptions.channels, fileOutputOptions.quality, fileOutputOptions.vbr)
                 else -> throw IllegalStateException("Unknown file output type ${fileOutputOptions.javaClass.simpleName}")
             }
-            audioSource.capture(audioFormat, bufferFactory, trackBoundsDetector, trackRecognizer, fileWriter)
+            val capture = audioSource.capture(audioFormat, bufferFactory, trackBoundsDetector, trackRecognizer, fileWriter)
+            captureEventBroker.monitor(capture)
+            capture.start()
+            capture
         }.also {
             ongoingCaptures[audioSource] = it
         }

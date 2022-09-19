@@ -28,3 +28,5 @@ fun PcmData.timeSlice(audioFormat: AudioFormat, offset: Duration, length: Durati
 }
 
 fun PcmData.getRMS(audioFormat: AudioFormat): Double = AudioMetricsUtil.getRMS(this, audioFormat)
+
+fun PcmData.getFrequencies(audioFormat: AudioFormat) = AudioMetricsUtil.getFrequencies(this, audioFormat)

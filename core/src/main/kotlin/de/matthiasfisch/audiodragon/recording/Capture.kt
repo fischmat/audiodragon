@@ -6,6 +6,8 @@ import de.matthiasfisch.audiodragon.recognition.TrackRecognizer
 import de.matthiasfisch.audiodragon.splitting.TrackBoundsDetector
 import de.matthiasfisch.audiodragon.splitting.TrackState
 import de.matthiasfisch.audiodragon.writer.AudioFileWriter
+import io.reactivex.Flowable
+import io.reactivex.processors.PublishProcessor
 import java.util.concurrent.locks.ReentrantLock
 import javax.sound.sampled.AudioFormat
 import kotlin.concurrent.withLock
@@ -29,14 +31,20 @@ class Capture private constructor(
             trackBoundsDetector,
             trackRecognizer,
             fileWriter
-        ).also {
-            it.start()
-        }
+        )
     }
 
     private var trackData: TrackData? = null
     private val trackDataLock = ReentrantLock()
     private var stopRequested = false
+
+    // Publishers
+    private val trackStartedPublisher = PublishProcessor.create<Unit>()
+    private val trackEndedPublisher = PublishProcessor.create<Unit>()
+    private val trackRecognizedPublisher = PublishProcessor.create<TrackData>()
+    private val captureStartedPublisher = PublishProcessor.create<Unit>()
+    private val captureStoppedPublisher = PublishProcessor.create<Unit>()
+    private val captureStopRequestedPublisher = PublishProcessor.create<Unit>()
 
     val audioSource = recording.audioSource
     val audioFormat = recording.audioFormat
@@ -55,20 +63,25 @@ class Capture private constructor(
 
     fun start() {
         recording.start()
+        captureStartedPublisher.onNext(Unit)
     }
 
     fun stop() {
         recording.interrupt()
         recording.join()
+        captureStoppedPublisher.onNext(Unit)
     }
 
     fun stopAfterTrack() {
         stopRequested = true
+        captureStopRequestedPublisher.onNext(Unit)
     }
+
+    fun stopAfterTrackRequested() = stopRequested
 
     fun currentTrack() = trackData
 
-    fun stopAfterTrackRequested() = stopRequested
+    fun audio() = recording.getAudio()
 
     fun mergeTrackData(trackDataToMerge: TrackData) = trackDataLock.withLock {
         trackData = if (trackData == null) trackDataToMerge else trackData!!.merge(trackDataToMerge)
@@ -76,9 +89,14 @@ class Capture private constructor(
     }
 
     private fun onTrackStarted() {
+        trackStartedPublisher.onNext(Unit)
+
         trackRecognizer.recognizeTrack { recording.getAudio() }
             .thenAccept { trackData ->
-                trackData?.let { mergeTrackData(it) }
+                trackData?.let {
+                    trackRecognizedPublisher.onNext(it)
+                    mergeTrackData(it)
+                }
             }
 
         // Reset buffer to be sure that there is no initial silence
@@ -86,6 +104,8 @@ class Capture private constructor(
     }
 
     private fun onTrackEnded() {
+        trackEndedPublisher.onNext(Unit)
+
         val audio = recording.reset()
         val trackData = this.trackData
         trackDataLock.withLock {
@@ -97,4 +117,13 @@ class Capture private constructor(
             stop()
         }
     }
+
+    // Event flowables
+    fun trackStartEvents() = Flowable.fromPublisher(trackStartedPublisher)
+    fun trackEndedEvents() = Flowable.fromPublisher(trackEndedPublisher)
+    fun trackRecognizedEvents() = Flowable.fromPublisher(trackRecognizedPublisher)
+    fun captureStartedEvents() = Flowable.fromPublisher(captureStartedPublisher)
+    fun captureStoppedEvents() = Flowable.fromPublisher(captureStoppedPublisher)
+    fun captureStopRequestedEvents() = Flowable.fromPublisher(captureStopRequestedPublisher)
+    fun audioChunksFlowable() = recording.toFlowable()
 }
