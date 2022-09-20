@@ -16,25 +16,25 @@ class CaptureEventBroker(val template: SimpMessagingTemplate) {
 
     fun monitor(capture: Capture) {
         val captureDTO = CaptureDTO(capture)
-        capture.captureStartedEvents().doOnNext {
+        capture.captureStartedEvents().subscribe {
             publishEvent(CaptureStartedEventDTO(captureDTO), template)
         }
-        capture.captureStoppedEvents().doOnNext {
+        capture.captureStoppedEvents().subscribe {
             publishEvent(CaptureEndedEventDTO(captureDTO), template)
         }
-        capture.captureStopRequestedEvents().doOnNext {
+        capture.captureStopRequestedEvents().subscribe {
             publishEvent(CaptureEndRequestedEventDTO(captureDTO), template)
         }
-        capture.trackStartEvents().doOnNext {
+        capture.trackStartEvents().subscribe {
             publishEvent(TrackStartedEventDTO(captureDTO), template)
         }
-        capture.trackEndedEvents().doOnNext {
+        capture.trackEndedEvents().subscribe {
             publishEvent(TrackEndedEventDTO(captureDTO), template)
         }
-        capture.trackRecognizedEvents().doOnNext {
+        capture.trackRecognizedEvents().subscribe {
             publishEvent(TrackRecognitionEventDTO(captureDTO, it), template)
         }
-        capture.audioChunksFlowable().doOnNext {
+        capture.audioChunksFlowable().subscribe {
             publishMetricsEvent(capture, it, template)
         }
     }
