@@ -15,7 +15,6 @@ import de.matthiasfisch.audiodragon.util.AudioSourceId
 import de.matthiasfisch.audiodragon.util.getId
 import de.matthiasfisch.audiodragon.writer.MP3FileWriter
 import org.springframework.stereotype.Service
-import java.nio.file.Paths
 import javax.sound.sampled.AudioFormat
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -37,7 +36,7 @@ class CaptureService(val settingsService: SettingsService, val captureEventBroke
                 else -> throw IllegalStateException("Unknown recognition type ${recognition.javaClass.simpleName}")
             }
             val fileWriter = when(fileOutputOptions) {
-                is MP3OptionsDTO -> MP3FileWriter(Paths.get(output.location), fileOutputOptions.bitRate, fileOutputOptions.channels, fileOutputOptions.quality, fileOutputOptions.vbr)
+                is MP3OptionsDTO -> MP3FileWriter(output.path, fileOutputOptions.bitRate, fileOutputOptions.channels, fileOutputOptions.quality, fileOutputOptions.vbr)
                 else -> throw IllegalStateException("Unknown file output type ${fileOutputOptions.javaClass.simpleName}")
             }
             val capture = audioSource.capture(audioFormat, bufferFactory, trackBoundsDetector, trackRecognizer, fileWriter)

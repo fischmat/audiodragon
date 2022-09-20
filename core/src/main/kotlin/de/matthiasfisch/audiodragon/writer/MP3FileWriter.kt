@@ -60,6 +60,7 @@ class MP3FileWriter(
             addID3TagToMP3File(targetPath, this)
         }
 
+        LOGGER.info { "MP3 file $targetPath was written successfully." }
         return targetPath
     }
 }

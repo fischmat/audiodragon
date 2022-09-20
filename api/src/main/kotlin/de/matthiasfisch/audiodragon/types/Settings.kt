@@ -1,7 +1,10 @@
 package de.matthiasfisch.audiodragon.types
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import java.nio.file.Paths
 
 data class Settings(
     val recognition: RecognitionSettings,
@@ -40,6 +43,8 @@ class ShazamRecognitionSettings(
     maxRetries: Int
 ): RecognitionSettings(secondsUntilRecognition, sampleSeconds, maxRetries)
 
-data class OutputSettings(
-    val location: String
-)
+class OutputSettings(
+    @JsonProperty("location") location: String
+) {
+    @JsonIgnore val path = Paths.get(location.replace("~", System.getProperty("user.home")))
+}
