@@ -18,6 +18,7 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":fft"))
     implementation("io.reactivex.rxjava2:rxkotlin:2.4.0")
     implementation("com.jayway.jsonpath:json-path:2.7.0")
     implementation("com.squareup.okhttp3:okhttp:4.10.0")

@@ -1,6 +1,6 @@
 package de.matthiasfisch.audiodragon.model
 
-import de.matthiasfisch.audiodragon.util.AudioMetricsUtil
+import de.matthiasfisch.audiodragon.fft.JavaFFT
 import de.matthiasfisch.audiodragon.util.durationToByteCount
 import de.matthiasfisch.audiodragon.util.getEffectiveFrameRate
 import de.matthiasfisch.audiodragon.util.getEffectiveFrameSize
@@ -24,7 +24,7 @@ fun PcmData.duration(audioFormat: AudioFormat): Duration {
 
     check(this.size % frameSize == 0) { "The PCM sample has size ${this.size} bytes, which is not a multiple of the provided frame size of $frameSize bytes." }
     val framesInSample = this.size / frameSize
-    return ((framesInSample / frameRate)*1000).roundToInt().milliseconds
+    return ((framesInSample / frameRate) * 1000).roundToInt().milliseconds
 }
 
 fun PcmData.timeSlice(audioFormat: AudioFormat, offset: Duration, length: Duration): PcmData {
@@ -33,7 +33,10 @@ fun PcmData.timeSlice(audioFormat: AudioFormat, offset: Duration, length: Durati
     return this.slice(byteOffset until min(size, byteOffset + byteLength)).toByteArray()
 }
 
-fun PcmData.getFrequencies(audioFormat: AudioFormat) = AudioMetricsUtil.getFrequencies(this, audioFormat)
+fun PcmData.getFrequencies(audioFormat: AudioFormat) = combineChannels(floatsPerChannel(audioFormat)) { f1, f2 -> (f1 + f2)/2 }
+
+fun PcmData.getFrequenciesPerChannel(audioFormat: AudioFormat) =
+    floatsPerChannel(audioFormat).map { JavaFFT.getFrequencies(it.toFloatArray(), audioFormat) }
 
 fun PcmData.getRMS(audioFormat: AudioFormat) = getRMSPerChannel(audioFormat).average()
 
@@ -59,7 +62,7 @@ fun PcmData.toDiscreteFrames(audioFormat: AudioFormat): List<List<Long>> {
 
 private fun getNextFrame(pcmBuffer: ByteBuffer, audioFormat: AudioFormat): List<Long> {
     val sampleSizeInBytes = audioFormat.sampleSizeInBits / 8
-    val isSigned = when(audioFormat.encoding) {
+    val isSigned = when (audioFormat.encoding) {
         AudioFormat.Encoding.PCM_UNSIGNED -> false
         AudioFormat.Encoding.PCM_SIGNED -> true
         else -> throw IllegalArgumentException("Unsupported encoding ${audioFormat.encoding}.")
@@ -91,3 +94,8 @@ private fun <E> transpose(xs: List<List<E>>): List<List<E>> {
         }
     }
 }
+
+private fun <T> combineChannels(channelValues: List<List<T>>, transform: (T, T) -> T) =
+    channelValues.reduce { ch1, ch2 ->
+        ch1.zip(ch2, transform)
+    }
