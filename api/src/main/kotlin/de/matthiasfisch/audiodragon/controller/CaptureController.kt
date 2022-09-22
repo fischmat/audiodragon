@@ -45,11 +45,10 @@ class CaptureController(val captureService: CaptureService) {
 
     @DeleteMapping("/{audioSourceId}")
     fun stopRecording(@PathVariable("audioSourceId") audioSourceId: AudioSourceId, @RequestParam(required = false) immediately: Boolean?) {
-        val capture = getCaptureForId(audioSourceId)
         if (immediately != false) {
-            capture.stop()
+            captureService.stopCapture(audioSourceId.getAudioSource())
         } else {
-            capture.stopAfterTrack()
+            captureService.stopCaptureAfterCurrentTrack(audioSourceId.getAudioSource())
         }
     }
 

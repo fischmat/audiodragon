@@ -8,9 +8,12 @@ import de.matthiasfisch.audiodragon.splitting.TrackState
 import de.matthiasfisch.audiodragon.writer.AudioFileWriter
 import io.reactivex.Flowable
 import io.reactivex.processors.PublishProcessor
+import mu.KotlinLogging
 import java.util.concurrent.locks.ReentrantLock
 import javax.sound.sampled.AudioFormat
 import kotlin.concurrent.withLock
+
+private val LOGGER = KotlinLogging.logger {}
 
 class Capture private constructor(
     private val recording: Recording,
@@ -70,6 +73,7 @@ class Capture private constructor(
         recording.interrupt()
         recording.join()
         captureStoppedPublisher.onNext(Unit)
+        LOGGER.debug { "Capture on audio device ${audioSource.name} stopped." }
     }
 
     fun stopAfterTrack() {

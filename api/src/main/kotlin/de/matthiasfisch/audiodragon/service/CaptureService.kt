@@ -14,10 +14,13 @@ import de.matthiasfisch.audiodragon.types.ShazamRecognitionSettings
 import de.matthiasfisch.audiodragon.util.AudioSourceId
 import de.matthiasfisch.audiodragon.util.getId
 import de.matthiasfisch.audiodragon.writer.MP3FileWriter
+import mu.KotlinLogging
 import org.springframework.stereotype.Service
 import javax.sound.sampled.AudioFormat
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+
+private val LOGGER = KotlinLogging.logger {}
 
 @Service
 class CaptureService(val settingsService: SettingsService, val captureEventBroker: CaptureEventBroker) {
@@ -53,11 +56,14 @@ class CaptureService(val settingsService: SettingsService, val captureEventBroke
     fun stopCapture(audioSource: AudioSource) = synchronized(ongoingCaptures) {
         val capture = ongoingCaptures[audioSource.getId()] ?: throw NoCaptureOngoingException(audioSource)
         capture.stop()
+        ongoingCaptures.remove(audioSource.getId())
+        LOGGER.info { "Capture on audio device ${audioSource.name} stopped." }
     }
 
     fun stopCaptureAfterCurrentTrack(audioSource: AudioSource) = synchronized(ongoingCaptures) {
         val capture = ongoingCaptures[audioSource.getId()] ?: throw NoCaptureOngoingException(audioSource)
         capture.stopAfterTrack()
+        LOGGER.info { "Capture on audio device ${audioSource.name} will be stopped after current track." }
     }
 
     fun isCaptureStoppedAfterCurrentTrack(audioSource: AudioSource) = synchronized(ongoingCaptures) {
