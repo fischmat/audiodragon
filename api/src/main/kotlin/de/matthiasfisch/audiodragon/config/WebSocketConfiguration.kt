@@ -15,7 +15,7 @@ class WebSocketConfiguration: WebSocketMessageBrokerConfigurer {
 
     override fun registerStompEndpoints(registry: StompEndpointRegistry) {
         registry.addEndpoint("/dragon")
-            .setAllowedOrigins("http://localhost*", "app://.")
+            .setAllowedOriginPatterns("http://localhost*", "app://.")
             .withSockJS()
     }
 
