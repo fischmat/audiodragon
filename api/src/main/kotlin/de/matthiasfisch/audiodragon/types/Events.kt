@@ -41,5 +41,5 @@ data class AudioMetricsEventDTO(
     val rms: Double,
     val trackTime: Long,
     val bufferSize: Long,
-    val frequencies: List<Double>
+    val frequencies: List<Float>
 ): EventDTO()
