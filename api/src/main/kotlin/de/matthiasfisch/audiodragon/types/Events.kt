@@ -38,9 +38,27 @@ class ErrorEventDTO(val message: String?, val stacktrace: List<String>): EventDT
     constructor(exception: Throwable) : this(exception.message, exception.stackTrace.map { it.toString() })
 }
 
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonSubTypes(
+    JsonSubTypes.Type(value = InMemoryBufferStats::class, name = "inMemory"),
+    JsonSubTypes.Type(value = DiskSpillingBufferStats::class, name = "diskSpilling")
+)
+interface BufferStats
+
+data class InMemoryBufferStats (
+    val size: Long,
+    val maxMemory: Long
+): BufferStats
+
+data class DiskSpillingBufferStats(
+    val size: Long,
+    val maxMemory: Long,
+    val freeDiskSpace: Long
+): BufferStats
+
 data class AudioMetricsEventDTO(
     val rms: Double,
     val trackTime: Long,
-    val bufferSize: Long,
-    val frequencies: List<Float>
+    val frequencies: List<Float>,
+    val buffer: BufferStats
 ): EventDTO()

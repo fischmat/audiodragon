@@ -1,5 +1,7 @@
 package de.matthiasfisch.audiodragon.service
 
+import de.matthiasfisch.audiodragon.buffer.DiskSpillingAudioBuffer
+import de.matthiasfisch.audiodragon.buffer.InMemoryAudioBuffer
 import de.matthiasfisch.audiodragon.model.getFrequencies
 import de.matthiasfisch.audiodragon.model.getRMS
 import de.matthiasfisch.audiodragon.recording.AudioChunk
@@ -7,6 +9,8 @@ import de.matthiasfisch.audiodragon.recording.Capture
 import de.matthiasfisch.audiodragon.types.*
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
+import java.nio.file.FileSystems
+import java.nio.file.Files
 
 const val CAPTURE_EVENTS_TOPIC = "/capture"
 const val METRICS_EVENTS_TOPIC = "/metrics"
@@ -40,14 +44,28 @@ class CaptureEventBroker(val template: SimpMessagingTemplate) {
     }
 
     private fun publishMetricsEvent(capture: Capture, audioChunk: AudioChunk, template: SimpMessagingTemplate) {
-        publishEvent(
-            AudioMetricsEventDTO(
+        val bufferStats = when (capture.audio().backingBuffer()) {
+            is InMemoryAudioBuffer -> InMemoryBufferStats(
+                capture.audio().size(),
+                Runtime.getRuntime().maxMemory()
+            )
+
+            is DiskSpillingAudioBuffer -> DiskSpillingBufferStats(
+                capture.audio().size(),
+                Runtime.getRuntime().maxMemory(),
+                Files.getFileStore(FileSystems.getDefault().rootDirectories.first()).usableSpace
+            )
+
+            else -> throw IllegalStateException("Unknown buffer type ${capture.audio().backingBuffer().javaClass}")
+        }
+
+        template.convertAndSend(
+            METRICS_EVENTS_TOPIC, AudioMetricsEventDTO(
                 audioChunk.pcmData.getRMS(audioChunk.audioFormat),
                 capture.audio().duration().inWholeMilliseconds,
-                capture.audio().size(),
-                audioChunk.pcmData.getFrequencies(audioChunk.audioFormat).toList()
-            ),
-            template
+                audioChunk.pcmData.getFrequencies(audioChunk.audioFormat).toList(),
+                bufferStats
+            )
         )
     }
 
