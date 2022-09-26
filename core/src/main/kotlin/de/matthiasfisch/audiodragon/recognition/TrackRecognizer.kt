@@ -28,6 +28,7 @@ abstract class TrackRecognizer(delayUntilRecognition: Duration, private val samp
         val track = try {
             recognizeTrackInternal(sample, audioBuffer.audioFormat(), previousSamples)
         } catch (e: IOException) {
+            LOGGER.error(e) { "Track recognition failed." }
             return CompletableFuture.failedFuture(e)
         }
 

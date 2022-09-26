@@ -8,6 +8,7 @@ import de.matthiasfisch.audiodragon.model.duration
 import de.matthiasfisch.audiodragon.recognition.TrackRecognizer
 import de.matthiasfisch.audiodragon.util.readTextAtPath
 import de.matthiasfisch.audiodragon.util.readTextListAtPath
+import mu.KotlinLogging
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -19,6 +20,9 @@ import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+
+private val LOGGER = KotlinLogging.logger {}
 
 private val SHAZAM_FORMAT = AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 44100f, 16, 1, 2, 44100f, false)
 private const val SHAZAM_SAMPLE_SIZE_LIMIT = 500 * 1024
@@ -39,7 +43,7 @@ open class RapidApiShazamTrackRecognizer(
     delayUntilRecognition: Duration,
     sampleDuration: Duration,
     maxRetriesForRecognition: Int
-): TrackRecognizer(delayUntilRecognition, sampleDuration, maxRetriesForRecognition) {
+) : TrackRecognizer(delayUntilRecognition, sampleDuration, maxRetriesForRecognition) {
     private val httpClient = OkHttpClient()
     private val recognizerId = UUID.randomUUID()
 
@@ -52,7 +56,9 @@ open class RapidApiShazamTrackRecognizer(
         audioFormat: AudioFormat,
         previousSamples: List<PcmData>
     ): TrackData? {
-        val alreadySubmittedDuration = previousSamples.map { it.duration(audioFormat) }.reduce { d1, d2 -> d1 + d2 }
+        val previousDurations = previousSamples.map { it.duration(audioFormat) }
+        val alreadySubmittedDuration =
+            if (previousDurations.isNotEmpty()) previousDurations.reduce { d1, d2 -> d1 + d2 } else Duration.ZERO
         val response = requestSongRecognition(sample, audioFormat, alreadySubmittedDuration)
         return parseResponse(response)
     }
@@ -76,6 +82,15 @@ open class RapidApiShazamTrackRecognizer(
 
         httpClient.newCall(request).execute().use { response ->
             response.body.use { responseBody ->
+                LOGGER.info {
+                    "RapidAPI Shazam: ${
+                        response.headers("x-ratelimit-requests-remaining").first()
+                    } of ${
+                        response.headers("x-ratelimit-requests-limit").first()
+                    } requests remaining in period (will be reset in ${
+                        response.headers("x-ratelimit-requests-reset").first().toInt().seconds
+                    })."
+                }
                 return if (response.isSuccessful && responseBody != null) {
                     JsonPath.parse(responseBody.byteStream())
                 } else {
