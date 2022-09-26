@@ -14,7 +14,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 class WebSocketConfiguration: WebSocketMessageBrokerConfigurer {
 
     override fun registerStompEndpoints(registry: StompEndpointRegistry) {
-        registry.addEndpoint("/dragon")
+        registry.addEndpoint("/events")
             .setAllowedOriginPatterns("http://localhost*", "app://.")
             .withSockJS()
     }
