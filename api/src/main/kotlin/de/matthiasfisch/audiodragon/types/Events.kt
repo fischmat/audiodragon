@@ -13,6 +13,7 @@ import java.time.Instant
     JsonSubTypes.Type(value = CaptureStartedEventDTO::class, name = "captureStarted"),
     JsonSubTypes.Type(value = CaptureEndedEventDTO::class, name = "captureEnded"),
     JsonSubTypes.Type(value = CaptureEndRequestedEventDTO::class, name = "captureEndRequested"),
+    JsonSubTypes.Type(value = AudioMetricsEventDTO::class, name = "metrics"),
     JsonSubTypes.Type(value = ErrorEventDTO::class, name = "error")
 )
 abstract class EventDTO {
