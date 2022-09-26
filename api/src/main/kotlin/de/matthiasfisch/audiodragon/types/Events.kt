@@ -26,7 +26,7 @@ class TrackStartedEventDTO(capture: CaptureDTO) : CaptureEventDTO(capture)
 
 class TrackEndedEventDTO(capture: CaptureDTO) : CaptureEventDTO(capture)
 
-class TrackRecognitionEventDTO(capture: CaptureDTO, track: TrackData) : CaptureEventDTO(capture)
+class TrackRecognitionEventDTO(capture: CaptureDTO, val track: TrackData) : CaptureEventDTO(capture)
 
 class CaptureStartedEventDTO(capture: CaptureDTO): CaptureEventDTO(capture)
 
