@@ -7,6 +7,7 @@ import de.matthiasfisch.audiodragon.model.getRMS
 import de.matthiasfisch.audiodragon.recording.AudioChunk
 import de.matthiasfisch.audiodragon.recording.Capture
 import de.matthiasfisch.audiodragon.types.*
+import io.reactivex.disposables.Disposable
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
 import java.nio.file.FileSystems
@@ -17,29 +18,39 @@ const val METRICS_EVENTS_TOPIC = "/metrics"
 
 @Service
 class CaptureEventBroker(val template: SimpMessagingTemplate) {
+    private val subscriptions = mutableMapOf<Capture, List<Disposable>>()
 
     fun monitor(capture: Capture) {
         val captureDTO = CaptureDTO(capture)
-        capture.captureStartedEvents().subscribe {
-            publishEvent(CaptureStartedEventDTO(captureDTO), template)
-        }
-        capture.captureStoppedEvents().subscribe {
-            publishEvent(CaptureEndedEventDTO(captureDTO), template)
-        }
-        capture.captureStopRequestedEvents().subscribe {
-            publishEvent(CaptureEndRequestedEventDTO(captureDTO), template)
-        }
-        capture.trackStartEvents().subscribe {
-            publishEvent(TrackStartedEventDTO(captureDTO), template)
-        }
-        capture.trackEndedEvents().subscribe {
-            publishEvent(TrackEndedEventDTO(captureDTO), template)
-        }
-        capture.trackRecognizedEvents().subscribe {
-            publishEvent(TrackRecognitionEventDTO(captureDTO, it), template)
-        }
-        capture.audioChunksFlowable().subscribe {
-            publishMetricsEvent(capture, it, template)
+        subscriptions[capture] = listOf(
+            capture.captureStartedEvents().subscribe {
+                publishEvent(CaptureStartedEventDTO(captureDTO), template)
+            },
+            capture.captureStoppedEvents().subscribe {
+                publishEvent(CaptureEndedEventDTO(captureDTO), template)
+                disposeCaptureSubscriptions(capture)
+            },
+            capture.captureStopRequestedEvents().subscribe {
+                publishEvent(CaptureEndRequestedEventDTO(captureDTO), template)
+            },
+            capture.trackStartEvents().subscribe {
+                publishEvent(TrackStartedEventDTO(captureDTO), template)
+            },
+            capture.trackEndedEvents().subscribe {
+                publishEvent(TrackEndedEventDTO(captureDTO), template)
+            },
+            capture.trackRecognizedEvents().subscribe {
+                publishEvent(TrackRecognitionEventDTO(captureDTO, it), template)
+            },
+            capture.audioChunksFlowable().subscribe {
+                publishMetricsEvent(capture, it, template)
+            }
+        )
+    }
+
+    private fun disposeCaptureSubscriptions(capture: Capture) {
+        subscriptions[capture]?.forEach {
+            it.dispose()
         }
     }
 
