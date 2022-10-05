@@ -1,7 +1,5 @@
 package de.matthiasfisch.audiodragon.fft;
 
-import javax.sound.sampled.AudioFormat;
-
 public class JavaFFT {
 
     private static final int MAX_FAST_BITS = 16;
@@ -41,8 +39,8 @@ public class JavaFFT {
         }
     }
 
-    public static double[] getFrequencies(float[] audioDataAsFloats, AudioFormat format) {
-        final int numberOfSamples = audioDataAsFloats.length / format.getFrameSize();
+    public static double[] getFrequencies(float[] audioDataAsFloats) {
+        final int numberOfSamples = audioDataAsFloats.length;
         final JavaFFT fft = new JavaFFT(numberOfSamples);
         final float[][] transformed = fft.transform(audioDataAsFloats);
         final float[] realPart = transformed[0];

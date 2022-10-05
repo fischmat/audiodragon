@@ -59,6 +59,6 @@ data class DiskSpillingBufferStats(
 data class AudioMetricsEventDTO(
     val rms: Double,
     val trackTime: Long,
-    val frequencies: List<Float>,
+    val frequencies: List<Double>,
     val buffer: BufferStats
 ): EventDTO()

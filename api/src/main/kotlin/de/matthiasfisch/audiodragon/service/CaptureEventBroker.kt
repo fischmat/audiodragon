@@ -2,7 +2,7 @@ package de.matthiasfisch.audiodragon.service
 
 import de.matthiasfisch.audiodragon.buffer.DiskSpillingAudioBuffer
 import de.matthiasfisch.audiodragon.buffer.InMemoryAudioBuffer
-import de.matthiasfisch.audiodragon.model.getFrequencies
+import de.matthiasfisch.audiodragon.model.FrequencyAccumulator
 import de.matthiasfisch.audiodragon.model.getRMS
 import de.matthiasfisch.audiodragon.recording.AudioChunk
 import de.matthiasfisch.audiodragon.recording.Capture
@@ -15,6 +15,8 @@ import java.nio.file.Files
 
 const val CAPTURE_EVENTS_TOPIC = "/capture"
 const val METRICS_EVENTS_TOPIC = "/metrics"
+private const val FREQUENCIES_TO_SEND = 128
+private const val FFT_CHUNKS = 32
 
 @Service
 class CaptureEventBroker(val template: SimpMessagingTemplate) {
@@ -22,6 +24,7 @@ class CaptureEventBroker(val template: SimpMessagingTemplate) {
 
     fun monitor(capture: Capture) {
         val captureDTO = CaptureDTO(capture)
+        val frequencyAccumulator = FrequencyAccumulator(capture.audioFormat, FFT_CHUNKS)
         subscriptions[capture] = listOf(
             capture.captureStartedEvents().subscribe {
                 publishEvent(CaptureStartedEventDTO(captureDTO), template)
@@ -43,7 +46,7 @@ class CaptureEventBroker(val template: SimpMessagingTemplate) {
                 publishEvent(TrackRecognitionEventDTO(captureDTO, it), template)
             },
             capture.audioChunksFlowable().subscribe {
-                publishMetricsEvent(capture, it, template)
+                publishMetricsEvent(capture, it, frequencyAccumulator, template)
             }
         )
     }
@@ -54,7 +57,7 @@ class CaptureEventBroker(val template: SimpMessagingTemplate) {
         }
     }
 
-    private fun publishMetricsEvent(capture: Capture, audioChunk: AudioChunk, template: SimpMessagingTemplate) {
+    private fun publishMetricsEvent(capture: Capture, audioChunk: AudioChunk, frequencyAccumulator: FrequencyAccumulator, template: SimpMessagingTemplate) {
         val bufferStats = when (capture.audio().backingBuffer()) {
             is InMemoryAudioBuffer -> InMemoryBufferStats(
                 capture.audio().size(),
@@ -70,11 +73,16 @@ class CaptureEventBroker(val template: SimpMessagingTemplate) {
             else -> throw IllegalStateException("Unknown buffer type ${capture.audio().backingBuffer().javaClass}")
         }
 
+        frequencyAccumulator.accumulate(audioChunk.pcmData)
+        val frequencies = frequencyAccumulator.getFrequencies().toList()
+        val skipPositions = frequencies.size / FREQUENCIES_TO_SEND
+        val prunedFrequencies = frequencies.filterIndexed() { index, _ -> skipPositions == 0 || index % skipPositions == 0 }
+
         template.convertAndSend(
             METRICS_EVENTS_TOPIC, AudioMetricsEventDTO(
                 audioChunk.pcmData.getRMS(audioChunk.audioFormat),
                 capture.audio().duration().inWholeMilliseconds,
-                audioChunk.pcmData.getFrequencies(audioChunk.audioFormat).toList(),
+                prunedFrequencies,
                 bufferStats
             )
         )

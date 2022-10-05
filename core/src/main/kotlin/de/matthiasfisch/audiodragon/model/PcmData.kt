@@ -4,7 +4,7 @@ import de.matthiasfisch.audiodragon.fft.JavaFFT
 import de.matthiasfisch.audiodragon.util.durationToByteCount
 import de.matthiasfisch.audiodragon.util.getEffectiveFrameRate
 import de.matthiasfisch.audiodragon.util.getEffectiveFrameSize
-import java.lang.IllegalArgumentException
+import io.reactivex.internal.util.Pow2.isPowerOfTwo
 import java.math.BigInteger
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -33,16 +33,20 @@ fun PcmData.timeSlice(audioFormat: AudioFormat, offset: Duration, length: Durati
     return this.slice(byteOffset until min(size, byteOffset + byteLength)).toByteArray()
 }
 
-fun PcmData.getFrequencies(audioFormat: AudioFormat) = combineChannels(floatsPerChannel(audioFormat)) { f1, f2 -> (f1 + f2)/2 }
+fun PcmData.getFrequencies(audioFormat: AudioFormat): DoubleArray {
+    return JavaFFT.getFrequencies(averagedFloats(audioFormat).toFloatArray())
+}
 
 fun PcmData.getFrequenciesPerChannel(audioFormat: AudioFormat) =
-    floatsPerChannel(audioFormat).map { JavaFFT.getFrequencies(it.toFloatArray(), audioFormat) }
+    floatsPerChannel(audioFormat).map { JavaFFT.getFrequencies(it.toFloatArray()) }
 
 fun PcmData.getRMS(audioFormat: AudioFormat) = getRMSPerChannel(audioFormat).average()
 
 fun PcmData.getRMSPerChannel(audioFormat: AudioFormat) = floatsPerChannel(audioFormat).map { frame ->
     sqrt(frame.map { it * it }.sum() / frame.size)
 }
+
+fun PcmData.averagedFloats(audioFormat: AudioFormat) = combineChannels(floatsPerChannel(audioFormat)) { f1, f2 -> (f1 + f2)/2 }
 
 fun PcmData.floatsPerChannel(audioFormat: AudioFormat): List<List<Float>> {
     val maxPossibleValue = 2f.pow(audioFormat.sampleSizeInBits - 1) - 1
@@ -99,3 +103,25 @@ private fun <T> combineChannels(channelValues: List<List<T>>, transform: (T, T) 
     channelValues.reduce { ch1, ch2 ->
         ch1.zip(ch2, transform)
     }
+
+class FrequencyAccumulator(private val audioFormat: AudioFormat, private val chunksToAccumulate: Int) {
+    private var currentFloats: List<Float>? = null
+    private var accumulatingFloats = mutableListOf<Float>()
+    private var accumulatedChunks = 0
+
+    fun accumulate(pcm: PcmData) {
+        if (currentFloats == null) {
+            currentFloats = pcm.averagedFloats(audioFormat)
+        }
+        accumulatingFloats.addAll(pcm.averagedFloats(audioFormat))
+        accumulatedChunks++
+
+        if (accumulatedChunks >= chunksToAccumulate && isPowerOfTwo(accumulatingFloats.size)) {
+            currentFloats = accumulatingFloats
+            accumulatingFloats = mutableListOf()
+            accumulatedChunks = 0
+        }
+    }
+
+    fun getFrequencies(): DoubleArray = JavaFFT.getFrequencies((currentFloats?:accumulatingFloats).toFloatArray())
+}
