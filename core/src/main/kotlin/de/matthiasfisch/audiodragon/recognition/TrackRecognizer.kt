@@ -7,6 +7,7 @@ import mu.KotlinLogging
 import java.io.IOException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
+import java.util.stream.Collectors
 import javax.sound.sampled.AudioFormat
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -57,6 +58,6 @@ abstract class TrackRecognizer(delayUntilRecognition: Duration, private val samp
     private fun takeSample(audioBuffer: AudioBuffer): PcmData {
         val time = audioBuffer.duration()
         val sampleStartTime = if (sampleDuration > time) 0.milliseconds else time.minus(sampleDuration)
-        return audioBuffer.get(sampleStartTime, sampleDuration).toList().toByteArray()
+        return audioBuffer.get(sampleStartTime, sampleDuration).collect(Collectors.toList()).toByteArray()
     }
 }

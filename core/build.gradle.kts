@@ -10,11 +10,6 @@ version = "0.0.1-SNAPSHOT"
 
 repositories {
     mavenCentral()
-    jcenter() {
-        content {
-            includeModule("com.cloudburst", "java-lame")
-        }
-    }
 }
 
 dependencies {

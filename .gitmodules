@@ -1,0 +1,3 @@
+[submodule "client/audiodragon-client"]
+	path = client/audiodragon-client
+	url = git@github.com:fischmat/audiodragon-client.git

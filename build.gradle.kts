@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 plugins {
 	id("org.springframework.boot") version "2.7.3"
@@ -21,6 +22,11 @@ allprojects {
 
 	repositories {
 		mavenCentral()
+		jcenter() {
+			content {
+				includeModule("com.cloudburst", "java-lame")
+			}
+		}
 	}
 
 	tasks.withType<KotlinCompile> {
@@ -33,6 +39,7 @@ allprojects {
 
 dependencies {
 	implementation(project(":api"))
+	implementation(project(":client"))
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
@@ -50,4 +57,8 @@ tasks.withType<Test>().configureEach {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+}
+
+tasks.named<BootJar>("bootJar") {
+	mainClass.set("de.matthiasfisch.audiodragon.AudiodragonApplicationKt")
 }

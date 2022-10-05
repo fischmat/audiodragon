@@ -71,7 +71,6 @@ class Capture private constructor(
 
     fun stop() {
         recording.interrupt()
-        recording.join()
         captureStoppedPublisher.onNext(Unit)
         LOGGER.debug { "Capture on audio device ${audioSource.name} stopped." }
     }
