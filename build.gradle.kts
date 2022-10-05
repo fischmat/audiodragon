@@ -39,7 +39,6 @@ allprojects {
 
 dependencies {
 	implementation(project(":api"))
-	implementation(project(":client"))
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
