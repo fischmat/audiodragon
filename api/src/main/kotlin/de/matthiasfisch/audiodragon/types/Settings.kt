@@ -5,11 +5,13 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import java.nio.file.Paths
+import kotlin.time.Duration
 
 data class Settings(
     val recognition: RecognitionSettings,
     val splitting: SplittingSettings,
-    val output: OutputSettings
+    val output: OutputSettings,
+    val events: EventSettings
 )
 
 data class SplittingSettings(
@@ -48,3 +50,7 @@ class OutputSettings(
 ) {
     @JsonIgnore val path = Paths.get(location.replace("~", System.getProperty("user.home")))
 }
+
+data class EventSettings(
+    val metricEventDebounceMillis: Long
+)

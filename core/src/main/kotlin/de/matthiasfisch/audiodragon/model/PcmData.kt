@@ -103,25 +103,3 @@ private fun <T> combineChannels(channelValues: List<List<T>>, transform: (T, T) 
     channelValues.reduce { ch1, ch2 ->
         ch1.zip(ch2, transform)
     }
-
-class FrequencyAccumulator(private val audioFormat: AudioFormat, private val chunksToAccumulate: Int) {
-    private var currentFloats: List<Float>? = null
-    private var accumulatingFloats = mutableListOf<Float>()
-    private var accumulatedChunks = 0
-
-    fun accumulate(pcm: PcmData) {
-        if (currentFloats == null) {
-            currentFloats = pcm.averagedFloats(audioFormat)
-        }
-        accumulatingFloats.addAll(pcm.averagedFloats(audioFormat))
-        accumulatedChunks++
-
-        if (accumulatedChunks >= chunksToAccumulate && isPowerOfTwo(accumulatingFloats.size)) {
-            currentFloats = accumulatingFloats
-            accumulatingFloats = mutableListOf()
-            accumulatedChunks = 0
-        }
-    }
-
-    fun getFrequencies(): DoubleArray = JavaFFT.getFrequencies((currentFloats?:accumulatingFloats).toFloatArray())
-}
