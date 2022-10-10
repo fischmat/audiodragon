@@ -1,4 +1,7 @@
 {
+  "recording": {
+    "bufferSize": 2048
+  },
   "recognition": {
     "recognizer": "shazam",
     "rapidApiToken": "",

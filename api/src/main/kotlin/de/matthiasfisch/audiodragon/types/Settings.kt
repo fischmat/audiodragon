@@ -11,7 +11,13 @@ import java.nio.file.Paths
 data class Settings(
     val recognition: RecognitionSettings,
     val splitting: SplittingSettings,
-    val output: OutputSettings
+    val output: OutputSettings,
+    val recording: RecordingSettings
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class RecordingSettings(
+    val bufferSize: Int
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)

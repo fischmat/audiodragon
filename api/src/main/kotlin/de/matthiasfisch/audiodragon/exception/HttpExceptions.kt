@@ -1,6 +1,6 @@
 package de.matthiasfisch.audiodragon.exception
 
-import de.matthiasfisch.audiodragon.recording.AudioSource
+import de.matthiasfisch.audiodragon.model.AudioSource
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.ResponseStatus
 

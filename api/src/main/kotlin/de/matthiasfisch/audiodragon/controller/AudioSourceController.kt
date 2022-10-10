@@ -1,6 +1,6 @@
 package de.matthiasfisch.audiodragon.controller
 
-import de.matthiasfisch.audiodragon.recording.getRecordableAudioSources
+import de.matthiasfisch.audiodragon.model.getRecordableAudioSources
 import de.matthiasfisch.audiodragon.types.AudioFormatDTO
 import de.matthiasfisch.audiodragon.types.AudioSourceDTO
 import de.matthiasfisch.audiodragon.util.AudioSourceId

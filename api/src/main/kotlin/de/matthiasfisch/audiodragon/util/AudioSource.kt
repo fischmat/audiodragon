@@ -1,7 +1,7 @@
 package de.matthiasfisch.audiodragon.util
 
-import de.matthiasfisch.audiodragon.recording.AudioSource
-import de.matthiasfisch.audiodragon.recording.getRecordableAudioSources
+import de.matthiasfisch.audiodragon.model.AudioSource
+import de.matthiasfisch.audiodragon.model.getRecordableAudioSources
 import java.nio.charset.StandardCharsets
 import java.util.*
 

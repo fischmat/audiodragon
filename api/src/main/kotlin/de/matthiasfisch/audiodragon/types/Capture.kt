@@ -2,7 +2,7 @@ package de.matthiasfisch.audiodragon.types
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
-import de.matthiasfisch.audiodragon.recording.Capture
+import de.matthiasfisch.audiodragon.capture.Capture
 import de.matthiasfisch.audiodragon.util.AudioSourceId
 
 data class CaptureDTO(

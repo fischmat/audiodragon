@@ -1,4 +1,4 @@
-package de.matthiasfisch.audiodragon.recording
+package de.matthiasfisch.audiodragon.model
 
 import javax.sound.sampled.*
 

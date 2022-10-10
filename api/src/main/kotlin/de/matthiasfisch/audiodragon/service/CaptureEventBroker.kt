@@ -5,7 +5,7 @@ import de.matthiasfisch.audiodragon.buffer.InMemoryAudioBuffer
 import de.matthiasfisch.audiodragon.model.FrequencyAccumulator
 import de.matthiasfisch.audiodragon.model.getRMS
 import de.matthiasfisch.audiodragon.recording.AudioChunk
-import de.matthiasfisch.audiodragon.recording.Capture
+import de.matthiasfisch.audiodragon.capture.Capture
 import de.matthiasfisch.audiodragon.types.*
 import io.reactivex.disposables.Disposable
 import org.springframework.messaging.simp.SimpMessagingTemplate

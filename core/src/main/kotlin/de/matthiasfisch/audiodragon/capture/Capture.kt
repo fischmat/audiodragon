@@ -1,8 +1,10 @@
-package de.matthiasfisch.audiodragon.recording
+package de.matthiasfisch.audiodragon.capture
 
-import de.matthiasfisch.audiodragon.buffer.AudioBuffer
+import de.matthiasfisch.audiodragon.model.AudioSource
 import de.matthiasfisch.audiodragon.model.TrackData
 import de.matthiasfisch.audiodragon.recognition.TrackRecognizer
+import de.matthiasfisch.audiodragon.recording.Recording
+import de.matthiasfisch.audiodragon.recording.RecordingFactory
 import de.matthiasfisch.audiodragon.splitting.TrackBoundsDetector
 import de.matthiasfisch.audiodragon.splitting.TrackState
 import de.matthiasfisch.audiodragon.writer.AudioFileWriter
@@ -16,21 +18,25 @@ import kotlin.concurrent.withLock
 private val LOGGER = KotlinLogging.logger {}
 
 class Capture private constructor(
+    val audioSource: AudioSource,
+    val audioFormat: AudioFormat,
     private val recording: Recording,
     private val trackBoundsDetector: TrackBoundsDetector,
-    private val trackRecognizer: TrackRecognizer,
+    private val trackRecognizer: TrackRecognizer?,
     private val fileWriter: AudioFileWriter
 ) {
     companion object {
         fun AudioSource.capture(
             audioFormat: AudioFormat,
-            bufferFactory: (AudioFormat) -> AudioBuffer,
+            recordingFactory: RecordingFactory,
             trackBoundsDetector: TrackBoundsDetector,
-            trackRecognizer: TrackRecognizer,
+            trackRecognizer: TrackRecognizer?,
             fileWriter: AudioFileWriter,
             blockSize: Int = 2048
         ) = Capture(
-            record(audioFormat, bufferFactory, blockSize),
+            this,
+            audioFormat,
+            recordingFactory.createRecording(this, audioFormat, blockSize),
             trackBoundsDetector,
             trackRecognizer,
             fileWriter
@@ -49,11 +55,8 @@ class Capture private constructor(
     private val captureStoppedPublisher = PublishProcessor.create<Unit>()
     private val captureStopRequestedPublisher = PublishProcessor.create<Unit>()
 
-    val audioSource = recording.audioSource
-    val audioFormat = recording.audioFormat
-
     init {
-        recording.toFlowable()
+        recording.audioChunkFlowable()
             .subscribe {
                 when (trackBoundsDetector(it)) {
                     TrackState.TRACK_STARTED -> onTrackStarted()
@@ -65,12 +68,12 @@ class Capture private constructor(
     }
 
     fun start() {
-        recording.start()
+        recording.startRecording()
         captureStartedPublisher.onNext(Unit)
     }
 
     fun stop() {
-        recording.interrupt()
+        recording.stopRecording().join()
         captureStoppedPublisher.onNext(Unit)
         LOGGER.debug { "Capture on audio device ${audioSource.name} stopped." }
     }
@@ -94,8 +97,8 @@ class Capture private constructor(
     private fun onTrackStarted() {
         trackStartedPublisher.onNext(Unit)
 
-        trackRecognizer.recognizeTrack { recording.getAudio() }
-            .thenAccept { trackData ->
+        trackRecognizer?.recognizeTrack { recording.getAudio() }
+            ?.thenAccept { trackData ->
                 trackData?.let {
                     trackRecognizedPublisher.onNext(it)
                     mergeTrackData(it)
@@ -128,5 +131,5 @@ class Capture private constructor(
     fun captureStartedEvents() = Flowable.fromPublisher(captureStartedPublisher)
     fun captureStoppedEvents() = Flowable.fromPublisher(captureStoppedPublisher)
     fun captureStopRequestedEvents() = Flowable.fromPublisher(captureStopRequestedPublisher)
-    fun audioChunksFlowable() = recording.toFlowable()
+    fun audioChunksFlowable() = recording.audioChunkFlowable()
 }

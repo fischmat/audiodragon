@@ -1,6 +1,6 @@
 package de.matthiasfisch.audiodragon.types
 
-import de.matthiasfisch.audiodragon.recording.AudioSource
+import de.matthiasfisch.audiodragon.model.AudioSource
 import de.matthiasfisch.audiodragon.util.getId
 import javax.sound.sampled.AudioFormat
 
