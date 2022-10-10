@@ -15,7 +15,6 @@ import java.nio.file.Files
 
 const val CAPTURE_EVENTS_TOPIC = "/capture"
 const val METRICS_EVENTS_TOPIC = "/metrics"
-private const val FREQUENCIES_TO_SEND = 128
 private const val FFT_CHUNKS = 32
 
 @Service
@@ -75,14 +74,12 @@ class CaptureEventBroker(val template: SimpMessagingTemplate) {
 
         frequencyAccumulator.accumulate(audioChunk.pcmData)
         val frequencies = frequencyAccumulator.getFrequencies().toList()
-        val skipPositions = frequencies.size / FREQUENCIES_TO_SEND
-        val prunedFrequencies = frequencies.filterIndexed() { index, _ -> skipPositions == 0 || index % skipPositions == 0 }
 
         template.convertAndSend(
             METRICS_EVENTS_TOPIC, AudioMetricsEventDTO(
                 audioChunk.pcmData.getRMS(audioChunk.audioFormat),
                 capture.audio().duration().inWholeMilliseconds,
-                prunedFrequencies,
+                frequencies.slice(0..120),
                 bufferStats
             )
         )
