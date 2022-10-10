@@ -30,4 +30,6 @@ class ResettableAudioBuffer(private val bufferFactory: () -> AudioBuffer): Audio
     override fun size(): Long = lock.withLock { buffer.size() }
 
     fun backingBuffer() = lock.withLock { buffer }
+
+    override fun close() = lock.withLock { buffer.close() }
 }

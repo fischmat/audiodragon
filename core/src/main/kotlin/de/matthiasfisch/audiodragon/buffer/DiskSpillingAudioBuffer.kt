@@ -3,6 +3,7 @@ package de.matthiasfisch.audiodragon.buffer
 import de.matthiasfisch.audiodragon.model.PcmData
 import de.matthiasfisch.audiodragon.util.byteCountToDuration
 import de.matthiasfisch.audiodragon.util.durationToByteCount
+import mu.KotlinLogging
 import java.io.ByteArrayOutputStream
 import java.io.FileOutputStream
 import java.nio.file.Files
@@ -12,6 +13,7 @@ import kotlin.math.min
 import kotlin.streams.asStream
 import kotlin.time.Duration
 
+private val LOGGER = KotlinLogging.logger {}
 const val DEFAULT_MAX_IN_MEMORY_BUFFER_SIZE = 128 * 1024 * 1024 // 128MB
 
 class DiskSpillingAudioBuffer(private val audioFormat: AudioFormat, private val inMemoryBufferMaxSize: Int = DEFAULT_MAX_IN_MEMORY_BUFFER_SIZE) : AudioBuffer {
@@ -19,10 +21,12 @@ class DiskSpillingAudioBuffer(private val audioFormat: AudioFormat, private val 
     private val out = FileOutputStream(spillFile)
     private val buffer = ByteArrayOutputStream(inMemoryBufferMaxSize)
     private var bytesSpilled = 0L
+    private var isClosed = false
 
     override fun audioFormat(): AudioFormat = audioFormat
 
     override fun add(data: PcmData) {
+        require(!isClosed) { "Buffer is already closed and can't accept any data." }
         // Write buffer to disk if size would exceed limit
         synchronized(buffer) {
             if (buffer.size() + data.size > inMemoryBufferMaxSize) {
@@ -38,6 +42,8 @@ class DiskSpillingAudioBuffer(private val audioFormat: AudioFormat, private val 
     }
 
     override fun get(): Stream<Byte> {
+        require(!isClosed) { "Buffer is already closed." }
+
         var bytesRead = 0
         val bytesToReadFromSpill = synchronized(out) {
             bytesSpilled
@@ -81,4 +87,15 @@ class DiskSpillingAudioBuffer(private val audioFormat: AudioFormat, private val 
     override fun duration(): Duration = audioFormat.byteCountToDuration(size())
 
     override fun size(): Long = synchronized(out) { bytesSpilled } + synchronized(buffer) { buffer.size() }
+
+    override fun close() {
+        synchronized(buffer) {
+            val inMemorySize = buffer.size()
+            buffer.close()
+            out.close()
+            spillFile.delete()
+            LOGGER.debug { "Disk-spilling buffer closed. Freed $bytesSpilled on disk and $inMemorySize bytes in memory." }
+            isClosed = true
+        }
+    }
 }

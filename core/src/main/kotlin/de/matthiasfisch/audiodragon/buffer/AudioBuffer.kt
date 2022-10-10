@@ -1,11 +1,12 @@
 package de.matthiasfisch.audiodragon.buffer
 
 import de.matthiasfisch.audiodragon.model.PcmData
+import java.io.Closeable
 import java.util.stream.Stream
 import javax.sound.sampled.AudioFormat
 import kotlin.time.Duration
 
-interface AudioBuffer {
+interface AudioBuffer: Closeable {
     fun audioFormat(): AudioFormat
 
     fun add(data: PcmData)
