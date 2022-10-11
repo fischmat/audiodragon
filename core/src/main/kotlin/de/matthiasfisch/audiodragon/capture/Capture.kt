@@ -4,7 +4,6 @@ import de.matthiasfisch.audiodragon.model.AudioSource
 import de.matthiasfisch.audiodragon.model.TrackData
 import de.matthiasfisch.audiodragon.recognition.TrackRecognizer
 import de.matthiasfisch.audiodragon.recording.Recording
-import de.matthiasfisch.audiodragon.recording.RecordingFactory
 import de.matthiasfisch.audiodragon.splitting.TrackBoundsDetector
 import de.matthiasfisch.audiodragon.splitting.TrackState
 import de.matthiasfisch.audiodragon.writer.AudioFileWriter
@@ -28,15 +27,14 @@ class Capture private constructor(
     companion object {
         fun AudioSource.capture(
             audioFormat: AudioFormat,
-            recordingFactory: RecordingFactory,
+            recording: Recording,
             trackBoundsDetector: TrackBoundsDetector,
             trackRecognizer: TrackRecognizer?,
-            fileWriter: AudioFileWriter,
-            blockSize: Int = 2048
+            fileWriter: AudioFileWriter
         ) = Capture(
             this,
             audioFormat,
-            recordingFactory.createRecording(this, audioFormat, blockSize),
+            recording,
             trackBoundsDetector,
             trackRecognizer,
             fileWriter
@@ -84,8 +82,6 @@ class Capture private constructor(
         stopRequested = true
         captureStopRequestedPublisher.onNext(Unit)
     }
-
-    fun stopAfterTrackRequested() = stopRequested
 
     fun currentTrack() = trackData
 
