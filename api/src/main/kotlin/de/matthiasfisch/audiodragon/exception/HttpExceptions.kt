@@ -9,3 +9,6 @@ class NoCaptureOngoingException(audioSource: AudioSource): Exception("Audio sour
 
 @ResponseStatus(HttpStatus.CONFLICT)
 class CaptureOngoingException(audioSource: AudioSource): Exception("Capture on audio source ${audioSource.name} is already ongoing.")
+
+@ResponseStatus(HttpStatus.NOT_FOUND)
+class NotFoundException(message: String): Exception(message)
