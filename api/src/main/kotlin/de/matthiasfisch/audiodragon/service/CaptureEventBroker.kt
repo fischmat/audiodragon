@@ -2,11 +2,12 @@ package de.matthiasfisch.audiodragon.service
 
 import de.matthiasfisch.audiodragon.buffer.DiskSpillingAudioBuffer
 import de.matthiasfisch.audiodragon.buffer.InMemoryAudioBuffer
+import de.matthiasfisch.audiodragon.capture.Capture
 import de.matthiasfisch.audiodragon.model.FrequencyAccumulator
 import de.matthiasfisch.audiodragon.model.getRMS
 import de.matthiasfisch.audiodragon.recording.AudioChunk
-import de.matthiasfisch.audiodragon.capture.Capture
 import de.matthiasfisch.audiodragon.types.*
+import io.reactivex.Flowable
 import io.reactivex.disposables.Disposable
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
@@ -23,7 +24,6 @@ class CaptureEventBroker(val template: SimpMessagingTemplate) {
 
     fun monitor(capture: Capture) {
         val captureDTO = CaptureDTO(capture)
-        val frequencyAccumulator = FrequencyAccumulator(capture.audioFormat, FFT_CHUNKS)
         subscriptions[capture] = listOf(
             capture.captureStartedEvents().subscribe {
                 publishEvent(CaptureStartedEventDTO(captureDTO), template)
@@ -44,9 +44,7 @@ class CaptureEventBroker(val template: SimpMessagingTemplate) {
             capture.trackRecognizedEvents().subscribe {
                 publishEvent(TrackRecognitionEventDTO(captureDTO, it), template)
             },
-            capture.audioChunksFlowable().subscribe {
-                publishMetricsEvent(capture, it, frequencyAccumulator, template)
-            }
+            publishMetrics(capture)
         )
     }
 
@@ -56,8 +54,29 @@ class CaptureEventBroker(val template: SimpMessagingTemplate) {
         }
     }
 
-    private fun publishMetricsEvent(capture: Capture, audioChunk: AudioChunk, frequencyAccumulator: FrequencyAccumulator, template: SimpMessagingTemplate) {
-        val bufferStats = when (capture.audio().backingBuffer()) {
+    private fun publishMetrics(capture: Capture): Disposable {
+
+        val frequencyAccumulator = FrequencyAccumulator(capture.audioFormat, FFT_CHUNKS)
+
+        return capture.audioChunksFlowable().subscribe { audioChunk ->
+            val bufferStats = getBufferStats(capture)
+
+            frequencyAccumulator.accumulate(audioChunk.pcmData)
+            val frequencies = frequencyAccumulator.getFrequencies().toList()
+
+            template.convertAndSend(
+                METRICS_EVENTS_TOPIC, AudioMetricsEventDTO(
+                    audioChunk.pcmData.getRMS(audioChunk.audioFormat),
+                    capture.audio().duration().inWholeMilliseconds,
+                    frequencies.slice(0..120),
+                    bufferStats
+                )
+            )
+        }
+    }
+
+    private fun getBufferStats(capture: Capture): BufferStats {
+        return when (val buffer = capture.audio().backingBuffer()) {
             is InMemoryAudioBuffer -> InMemoryBufferStats(
                 capture.audio().size(),
                 Runtime.getRuntime().maxMemory()
@@ -66,23 +85,11 @@ class CaptureEventBroker(val template: SimpMessagingTemplate) {
             is DiskSpillingAudioBuffer -> DiskSpillingBufferStats(
                 capture.audio().size(),
                 Runtime.getRuntime().maxMemory(),
-                Files.getFileStore(FileSystems.getDefault().rootDirectories.first()).usableSpace
+                buffer.initiallyUsableDiskSpace
             )
 
             else -> throw IllegalStateException("Unknown buffer type ${capture.audio().backingBuffer().javaClass}")
         }
-
-        frequencyAccumulator.accumulate(audioChunk.pcmData)
-        val frequencies = frequencyAccumulator.getFrequencies().toList()
-
-        template.convertAndSend(
-            METRICS_EVENTS_TOPIC, AudioMetricsEventDTO(
-                audioChunk.pcmData.getRMS(audioChunk.audioFormat),
-                capture.audio().duration().inWholeMilliseconds,
-                frequencies.slice(0..120),
-                bufferStats
-            )
-        )
     }
 
     private fun publishEvent(event: EventDTO, template: SimpMessagingTemplate) = template.convertAndSend(

@@ -23,6 +23,8 @@ class DiskSpillingAudioBuffer(private val audioFormat: AudioFormat, private val 
     private var bytesSpilled = 0L
     private var isClosed = false
 
+    val initiallyUsableDiskSpace = Files.getFileStore(spillFile.toPath()).usableSpace
+
     override fun audioFormat(): AudioFormat = audioFormat
 
     override fun add(data: PcmData) {
