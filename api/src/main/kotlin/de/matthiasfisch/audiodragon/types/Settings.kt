@@ -56,7 +56,7 @@ class ShazamRecognitionSettings(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 class OutputSettings(
-    @JsonProperty("location") location: String
+    @JsonProperty("location") val location: String
 ) {
     @JsonIgnore val path = Paths.get(location.replace("~", System.getProperty("user.home")))
 }

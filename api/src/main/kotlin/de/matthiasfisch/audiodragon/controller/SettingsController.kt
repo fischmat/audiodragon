@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController
 class SettingsController(val settingsService: SettingsService) {
 
     @GetMapping
-    fun getSettings() = settingsService.settings
+    fun getSettings(): Settings = settingsService.settings
 
     @PatchMapping
     fun updateSettings(@RequestBody settings: Settings): Settings {
