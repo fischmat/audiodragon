@@ -7,6 +7,7 @@ import io.reactivex.Flowable
 import io.reactivex.processors.PublishProcessor
 import mu.KotlinLogging
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
@@ -21,6 +22,8 @@ open class JavaAudioSystemRecording(
 ) : Thread(), Recording {
     private val chunkPublisher = PublishProcessor.create<AudioChunk>()
     private val audioBuffer = ResettableAudioBuffer { bufferFactory(audioFormat) }
+
+    private val stopRequested = AtomicBoolean(false)
     private val stopFuture = CompletableFuture<AudioBuffer>()
 
     init {
@@ -40,7 +43,7 @@ open class JavaAudioSystemRecording(
         val input = AudioInputStream(dataLine)
 
         try {
-            while (!isInterrupted) {
+            while (!stopRequested.get()) {
                 val bytesRead = input.read(workingBuffer)
                 if (bytesRead == -1) {
                     LOGGER.debug { "Audio input stream returned -1. Stopping recording." }
@@ -79,7 +82,7 @@ open class JavaAudioSystemRecording(
     override fun startRecording() = start()
 
     override fun stopRecording(): CompletableFuture<AudioBuffer> {
-        interrupt()
+        stopRequested.set(true)
         return stopFuture.copy()
     }
 
