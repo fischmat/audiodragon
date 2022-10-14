@@ -10,6 +10,7 @@ data class TrackData(
     val coverartImageUrl: String? = null,
     val backgroundImageUrl: String? = null,
     val lyrics: List<String?>? = null,
+    val lengthMillis: Int? = null
 ) {
     fun merge(other: TrackData) = TrackData(
         other.title ?: title,
@@ -20,6 +21,7 @@ data class TrackData(
         other.releaseYear ?: releaseYear,
         other.coverartImageUrl ?: coverartImageUrl,
         other.backgroundImageUrl ?: backgroundImageUrl,
-        other.lyrics ?: lyrics
+        other.lyrics ?: lyrics,
+        other.lengthMillis ?: lengthMillis
     )
 }

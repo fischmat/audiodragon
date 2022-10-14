@@ -7,7 +7,15 @@
     "rapidApiToken": "",
     "secondsUntilRecognition": 20,
     "sampleSeconds": 5,
-    "maxRetries": 3
+    "maxRetries": 3,
+    "postprocessors": [
+      {
+        "type": "musicbrainz",
+        "preferInput": true,
+        "minScore": 90,
+        "userAgent": "AudioDragon (https://github.com/fischmat/audiodragon)"
+      }
+    ]
   },
   "splitting": {
     "splitAfterSilenceMillis": 350,

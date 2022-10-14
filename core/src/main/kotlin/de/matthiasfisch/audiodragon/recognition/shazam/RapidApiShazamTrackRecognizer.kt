@@ -5,6 +5,7 @@ import com.jayway.jsonpath.JsonPath
 import de.matthiasfisch.audiodragon.model.PcmData
 import de.matthiasfisch.audiodragon.model.TrackData
 import de.matthiasfisch.audiodragon.model.duration
+import de.matthiasfisch.audiodragon.recognition.TrackRecognitionPostprocessor
 import de.matthiasfisch.audiodragon.recognition.TrackRecognizer
 import de.matthiasfisch.audiodragon.util.readTextAtPath
 import de.matthiasfisch.audiodragon.util.readTextListAtPath
@@ -42,8 +43,9 @@ open class RapidApiShazamTrackRecognizer(
     private val apiKey: String,
     delayUntilRecognition: Duration,
     sampleDuration: Duration,
-    maxRetriesForRecognition: Int
-) : TrackRecognizer(delayUntilRecognition, sampleDuration, maxRetriesForRecognition) {
+    maxRetriesForRecognition: Int,
+    postprocessors: List<TrackRecognitionPostprocessor>
+) : TrackRecognizer(delayUntilRecognition, sampleDuration, maxRetriesForRecognition, postprocessors) {
     private val httpClient = OkHttpClient()
     private val recognizerId = UUID.randomUUID()
 

@@ -14,14 +14,23 @@ import kotlin.time.Duration.Companion.milliseconds
 
 private val LOGGER = KotlinLogging.logger {}
 
-abstract class TrackRecognizer(delayUntilRecognition: Duration, private val sampleDuration: Duration,  private val maxRetriesForRecognition: Int) {
-    private val delayedExecutor = CompletableFuture.delayedExecutor(delayUntilRecognition.inWholeMilliseconds, TimeUnit.MILLISECONDS)
+abstract class TrackRecognizer(
+    delayUntilRecognition: Duration,
+    private val sampleDuration: Duration,
+    private val maxRetriesForRecognition: Int,
+    private val postprocessors: List<TrackRecognitionPostprocessor>
+) {
+    private val delayedExecutor =
+        CompletableFuture.delayedExecutor(delayUntilRecognition.inWholeMilliseconds, TimeUnit.MILLISECONDS)
 
     fun recognizeTrack(audioProvider: () -> AudioBuffer): CompletableFuture<TrackData?> =
         CompletableFuture.supplyAsync({ recognizeTrack(audioProvider, listOf()) }, delayedExecutor)
             .thenCompose { it }
 
-    private fun recognizeTrack(audioProvider: () -> AudioBuffer, previousSamples: List<PcmData>): CompletableFuture<TrackData?> {
+    private fun recognizeTrack(
+        audioProvider: () -> AudioBuffer,
+        previousSamples: List<PcmData>
+    ): CompletableFuture<TrackData?> {
         check(previousSamples.size + 1 < maxRetriesForRecognition) { "Maximum retries reached unexpectedly." }
 
         val audioBuffer = audioProvider()
@@ -34,8 +43,10 @@ abstract class TrackRecognizer(delayUntilRecognition: Duration, private val samp
         }
 
         if (track != null) {
+            // Augment track data with augmentation processors
+            val augmentedTrack = postprocessors.fold(track) { t, p -> p.augment(t) }
             LOGGER.info { "Track was recognized as ${track.title} by ${track.artist}." }
-            return CompletableFuture.completedFuture(track)
+            return CompletableFuture.completedFuture(augmentedTrack)
         }
 
         val retries = previousSamples.size + 1
@@ -45,7 +56,10 @@ abstract class TrackRecognizer(delayUntilRecognition: Duration, private val samp
         }
 
         LOGGER.debug { "Track could not be recognized at retry $retries. Rescheduling recognition." }
-        return CompletableFuture.supplyAsync({ recognizeTrack(audioProvider, previousSamples + sample) }, delayedExecutor)
+        return CompletableFuture.supplyAsync(
+            { recognizeTrack(audioProvider, previousSamples + sample) },
+            delayedExecutor
+        )
             .thenCompose { it }
     }
 

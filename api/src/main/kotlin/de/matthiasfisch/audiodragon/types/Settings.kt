@@ -37,7 +37,8 @@ data class SplittingSettings(
 abstract class RecognitionSettings(
     val secondsUntilRecognition: Int,
     val sampleSeconds: Int,
-    val maxRetries: Int
+    val maxRetries: Int,
+    val postprocessors: List<RecognitionPostprocessorConfig>
 ) {
     init {
         require(secondsUntilRecognition >= 0) { "Seconds until recognition must be positive." }
@@ -51,8 +52,23 @@ class ShazamRecognitionSettings(
     val rapidApiToken: String,
     secondsUntilRecognition: Int,
     sampleSeconds: Int,
-    maxRetries: Int
-): RecognitionSettings(secondsUntilRecognition, sampleSeconds, maxRetries)
+    maxRetries: Int,
+    postprocessors: List<RecognitionPostprocessorConfig>
+): RecognitionSettings(secondsUntilRecognition, sampleSeconds, maxRetries, postprocessors)
+
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonSubTypes(JsonSubTypes.Type(value = MusicBrainzPostprocessorConfig::class, name = "musicbrainz"))
+@JsonIgnoreProperties(ignoreUnknown = true)
+abstract class RecognitionPostprocessorConfig(
+    val preferInput: Boolean
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+class MusicBrainzPostprocessorConfig(
+    val minScore: Int,
+    val userAgent: String,
+    preferInput: Boolean
+): RecognitionPostprocessorConfig(preferInput)
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 class OutputSettings(
