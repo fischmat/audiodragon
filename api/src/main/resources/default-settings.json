@@ -1,6 +1,10 @@
 {
   "recording": {
-    "bufferSize": 2048
+    "buffer": {
+      "type": "hybrid",
+      "batchSize": 2048,
+      "inMemoryBufferMaxSize": 134217728
+    }
   },
   "recognition": {
     "recognizer": "shazam",

@@ -1,6 +1,7 @@
 package de.matthiasfisch.audiodragon.service
 
 import de.matthiasfisch.audiodragon.buffer.DiskSpillingAudioBuffer
+import de.matthiasfisch.audiodragon.buffer.InMemoryAudioBuffer
 import de.matthiasfisch.audiodragon.capture.Capture
 import de.matthiasfisch.audiodragon.capture.Capture.Companion.capture
 import de.matthiasfisch.audiodragon.exception.CaptureOngoingException
@@ -68,8 +69,16 @@ class CaptureService(val settingsService: SettingsService, val captureEventBroke
     }
 
     private fun createRecording(audioSource: AudioSource, audioFormat: AudioFormat) = with(settingsService.settings) {
-        val bufferFactory = { format: AudioFormat -> DiskSpillingAudioBuffer(format) }
-        JavaAudioSystemRecording(audioSource, audioFormat, bufferFactory, recording.bufferSize)
+        val bufferFactory = getBufferFactory()
+        JavaAudioSystemRecording(audioSource, audioFormat, bufferFactory, recording.buffer.batchSize)
+    }
+
+    private fun getBufferFactory() = with(settingsService.settings) {
+        when(val buffer = recording.buffer) {
+            is InMemoryBufferSettings -> { format: AudioFormat -> InMemoryAudioBuffer(format, buffer.initialBufferSize) }
+            is DiskSpillingBufferSettings -> { format: AudioFormat -> DiskSpillingAudioBuffer(format, buffer.inMemoryBufferMaxSize) }
+            else -> throw IllegalArgumentException("Unknown buffer settings.")
+        }
     }
 
     private fun getTrackBoundsDetector() = with(settingsService.settings) {

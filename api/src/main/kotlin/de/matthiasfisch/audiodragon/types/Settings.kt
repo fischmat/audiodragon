@@ -18,8 +18,28 @@ data class Settings(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class RecordingSettings(
-    val bufferSize: Int
+    val buffer: BufferSettings
 )
+
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonSubTypes(
+    JsonSubTypes.Type(value = InMemoryBufferSettings::class, name = "memory"),
+    JsonSubTypes.Type(value = DiskSpillingBufferSettings::class, name = "hybrid")
+)
+@JsonIgnoreProperties(ignoreUnknown = true)
+abstract class BufferSettings(
+    val batchSize: Int
+)
+
+class InMemoryBufferSettings(
+    batchSize: Int,
+    val initialBufferSize: Int
+): BufferSettings(batchSize)
+
+class DiskSpillingBufferSettings(
+    batchSize: Int,
+    val inMemoryBufferMaxSize: Int
+): BufferSettings(batchSize)
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class SplittingSettings(
