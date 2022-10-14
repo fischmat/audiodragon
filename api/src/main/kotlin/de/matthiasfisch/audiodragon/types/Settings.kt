@@ -6,6 +6,8 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import java.nio.file.Paths
 
+const val SETTINGS_VERSION = 1
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class Settings(
     val recognition: RecognitionSettings,
