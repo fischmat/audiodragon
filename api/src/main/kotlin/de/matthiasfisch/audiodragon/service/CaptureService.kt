@@ -108,7 +108,9 @@ class CaptureService(val settingsService: SettingsService, val captureEventBroke
                 fileOutputOptions.bitRate,
                 fileOutputOptions.channels,
                 fileOutputOptions.quality,
-                fileOutputOptions.vbr
+                fileOutputOptions.vbr,
+                output.encodingChunkLengthMs.milliseconds,
+                output.coverartMaxDimension
             )
 
             else -> throw IllegalStateException("Unknown file output type ${fileOutputOptions.javaClass.simpleName}")

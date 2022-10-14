@@ -21,7 +21,8 @@ class MP3FileWriter(
     private val channels: Int,
     private val quality: Int,
     private val variableBitRate: Boolean,
-    private val chunkLength: Duration = 1.minutes
+    private val chunkLength: Duration = 1.minutes,
+    private val coverartMaxDimension: Int
 ) : AudioFileWriter {
 
     override fun writeToFile(audioBuffer: AudioBuffer, trackData: TrackData?): Path {
@@ -57,7 +58,7 @@ class MP3FileWriter(
 
         trackData?.apply {
             LOGGER.debug { "Adding ID3 tag to file $targetPath." }
-            addID3TagToMP3File(targetPath, this)
+            addID3TagToMP3File(targetPath, this, artworkDimension = coverartMaxDimension)
         }
 
         LOGGER.info { "MP3 file $targetPath was written successfully." }

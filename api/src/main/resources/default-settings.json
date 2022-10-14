@@ -22,6 +22,8 @@
     "silenceRmsTolerance": 0.0
   },
   "output": {
-    "location": "~/Music/AudioDragon"
+    "location": "~/Music/AudioDragon",
+    "encodingChunkLengthMs": 60000,
+    "coverartMaxDimension": 500
   }
 }

@@ -2,7 +2,6 @@ package de.matthiasfisch.audiodragon.types
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import java.nio.file.Paths
@@ -72,7 +71,9 @@ class MusicBrainzPostprocessorConfig(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 class OutputSettings(
-    @JsonProperty("location") val location: String
+    val location: String,
+    val encodingChunkLengthMs: Int,
+    val coverartMaxDimension: Int
 ) {
     @JsonIgnore val path = Paths.get(location.replace("~", System.getProperty("user.home")))
 }
