@@ -4,7 +4,7 @@ plugins {
     kotlin("jvm") version "1.6.21"
 }
 
-group = "de.matthiasfisch"
+group = "de.matthiasfisch.audiodragon"
 version = "0.0.1-SNAPSHOT"
 
 repositories {

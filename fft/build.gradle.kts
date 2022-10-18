@@ -2,7 +2,7 @@ plugins {
     id("java")
 }
 
-group = "de.matthiasfisch"
+group = "de.matthiasfisch.audiodragon"
 version = "0.0.1-SNAPSHOT"
 
 repositories {
