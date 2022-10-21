@@ -23,6 +23,7 @@ configurations {
 
 dependencies {
     implementation(project(":core"))
+    implementation(project(":library"))
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework:spring-messaging")

@@ -13,7 +13,8 @@ data class Settings(
     val recognition: RecognitionSettings,
     val splitting: SplittingSettings,
     val output: OutputSettings,
-    val recording: RecordingSettings
+    val recording: RecordingSettings,
+    val library: LibrarySettings
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -98,4 +99,12 @@ class OutputSettings(
     val coverartMaxDimension: Int
 ) {
     @JsonIgnore val path = Paths.get(location.replace("~", System.getProperty("user.home")))
+}
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class LibrarySettings(
+    val dbPath: String,
+    val scanThreads: Int
+) {
+    fun databasePath() = Paths.get(dbPath.replace("~", System.getProperty("user.home")))
 }

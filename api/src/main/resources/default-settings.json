@@ -29,5 +29,9 @@
     "location": "~/Music/AudioDragon",
     "encodingChunkLengthMs": 60000,
     "coverartMaxDimension": 500
+  },
+  "library": {
+    "dbPath": "~/.audiodragon.lib.sqlite",
+    "scanThreads": -1
   }
 }
