@@ -14,6 +14,8 @@ import java.time.Instant
     JsonSubTypes.Type(value = CaptureEndedEventDTO::class, name = "captureEnded"),
     JsonSubTypes.Type(value = CaptureEndRequestedEventDTO::class, name = "captureEndRequested"),
     JsonSubTypes.Type(value = AudioMetricsEventDTO::class, name = "metrics"),
+    JsonSubTypes.Type(value = LibraryInitializedEvent::class, name = "libraryInit"),
+    JsonSubTypes.Type(value = LibraryRefreshedEvent::class, name = "libraryRefreshed"),
     JsonSubTypes.Type(value = ErrorEventDTO::class, name = "error")
 )
 abstract class EventDTO {
@@ -37,6 +39,10 @@ class CaptureEndRequestedEventDTO(capture: CaptureDTO): CaptureEventDTO(capture)
 class ErrorEventDTO(val message: String?, val stacktrace: List<String>): EventDTO() {
     constructor(exception: Throwable) : this(exception.message, exception.stackTrace.map { it.toString() })
 }
+
+class LibraryInitializedEvent: EventDTO()
+
+class LibraryRefreshedEvent: EventDTO()
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes(

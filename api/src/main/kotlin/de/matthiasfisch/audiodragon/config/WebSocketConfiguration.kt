@@ -1,6 +1,7 @@
 package de.matthiasfisch.audiodragon.config
 
 import de.matthiasfisch.audiodragon.service.CAPTURE_EVENTS_TOPIC
+import de.matthiasfisch.audiodragon.service.LIBRARY_EVENTS_TOPIC
 import de.matthiasfisch.audiodragon.service.METRICS_EVENTS_TOPIC
 import org.springframework.context.annotation.Configuration
 import org.springframework.messaging.simp.config.MessageBrokerRegistry
@@ -20,7 +21,7 @@ class WebSocketConfiguration: WebSocketMessageBrokerConfigurer {
     }
 
     override fun configureMessageBroker(registry: MessageBrokerRegistry) {
-        registry.enableSimpleBroker(CAPTURE_EVENTS_TOPIC, METRICS_EVENTS_TOPIC)
+        registry.enableSimpleBroker(CAPTURE_EVENTS_TOPIC, METRICS_EVENTS_TOPIC, LIBRARY_EVENTS_TOPIC)
         registry.setApplicationDestinationPrefixes("/app")
     }
 }

@@ -20,7 +20,7 @@ import kotlin.io.path.absolutePathString
 private val LOGGER = KotlinLogging.logger {}
 
 @Service
-class LibraryService(private val settingsService: SettingsService) {
+class LibraryService(private val libraryEventBroker: LibraryEventBroker, private val settingsService: SettingsService) {
     private val libraryPersistence = with(settingsService.settings) {
         LibraryRepository(library.databasePath())
     }
@@ -82,6 +82,7 @@ class LibraryService(private val settingsService: SettingsService) {
             val libraryItems = LibraryScanner.scanForTracks(libraryPath, executor = libraryScanExecutor)
             libraryPersistence.replaceAllItems(libraryItems)
             LOGGER.info { "Directory $libraryPath successfully scanned." }
+            libraryEventBroker.sendLibraryInitialized()
         } catch (e: Throwable) {
             LOGGER.error(e) { "Failed to scan library from directory $libraryPath" }
         }
@@ -94,6 +95,7 @@ class LibraryService(private val settingsService: SettingsService) {
                 createdPaths.map { LibraryScanner.scanFile(it) }.forEach { libraryPersistence.upsertItem(it) }
                 modifiedPaths.map { LibraryScanner.scanFile(it) }.forEach { libraryPersistence.upsertItem(it) }
                 deletedPaths.forEach { libraryPersistence.deleteItem(it) }
+                libraryEventBroker.sendLibraryRefreshed()
             }
         }
         watchDirectory(settingsService.settings.output.path, executor = libraryScanExecutor, callback = libraryWatcher)
