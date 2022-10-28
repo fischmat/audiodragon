@@ -5,44 +5,45 @@ import de.matthiasfisch.audiodragon.buffer.InMemoryAudioBuffer
 import de.matthiasfisch.audiodragon.capture.Capture
 import de.matthiasfisch.audiodragon.model.FrequencyAccumulator
 import de.matthiasfisch.audiodragon.model.getRMS
-import de.matthiasfisch.audiodragon.recording.AudioChunk
 import de.matthiasfisch.audiodragon.types.*
-import io.reactivex.Flowable
 import io.reactivex.disposables.Disposable
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
-import java.nio.file.FileSystems
-import java.nio.file.Files
+import kotlin.io.path.absolutePathString
 
 const val CAPTURE_EVENTS_TOPIC = "/capture"
 const val METRICS_EVENTS_TOPIC = "/metrics"
 private const val FFT_CHUNKS = 32
 
 @Service
-class CaptureEventBroker(val template: SimpMessagingTemplate) {
+class CaptureEventBroker(val template: SimpMessagingTemplate, val applicationEventPublisher: ApplicationEventPublisher) {
     private val subscriptions = mutableMapOf<Capture, List<Disposable>>()
 
     fun monitor(capture: Capture) {
         val captureDTO = CaptureDTO(capture)
         subscriptions[capture] = listOf(
             capture.captureStartedEvents().subscribe {
-                publishEvent(CaptureStartedEventDTO(captureDTO), template)
+                publishEvent(CaptureStartedEventDTO(captureDTO))
             },
             capture.captureStoppedEvents().subscribe {
-                publishEvent(CaptureEndedEventDTO(captureDTO), template)
+                publishEvent(CaptureEndedEventDTO(captureDTO))
                 disposeCaptureSubscriptions(capture)
             },
             capture.captureStopRequestedEvents().subscribe {
-                publishEvent(CaptureEndRequestedEventDTO(captureDTO), template)
+                publishEvent(CaptureEndRequestedEventDTO(captureDTO))
             },
             capture.trackStartEvents().subscribe {
-                publishEvent(TrackStartedEventDTO(captureDTO), template)
+                publishEvent(TrackStartedEventDTO(captureDTO))
             },
             capture.trackEndedEvents().subscribe {
-                publishEvent(TrackEndedEventDTO(captureDTO), template)
+                publishEvent(TrackEndedEventDTO(captureDTO))
             },
             capture.trackRecognizedEvents().subscribe {
-                publishEvent(TrackRecognitionEventDTO(captureDTO, it), template)
+                publishEvent(TrackRecognitionEventDTO(captureDTO, it))
+            },
+            capture.trackWrittenEvents().subscribe {
+                publishEvent(TrackWrittenEventDTO(captureDTO, it.absolutePathString()))
             },
             publishMetrics(capture)
         )
@@ -92,7 +93,10 @@ class CaptureEventBroker(val template: SimpMessagingTemplate) {
         }
     }
 
-    private fun publishEvent(event: EventDTO, template: SimpMessagingTemplate) = template.convertAndSend(
-        CAPTURE_EVENTS_TOPIC, event
-    )
+    private fun publishEvent(event: EventDTO) {
+        applicationEventPublisher.publishEvent(event)
+        template.convertAndSend(
+            CAPTURE_EVENTS_TOPIC, event
+        )
+    }
 }

@@ -8,18 +8,21 @@ fun watchDirectory(path: Path, executor: Executor = ForkJoinPool.commonPool(), c
     require(path.toFile().isDirectory) { "Only directories can be watched, but $path is not a directory." }
     val watchService = path.fileSystem.newWatchService()
 
-    val createWatch = path.register(watchService, StandardWatchEventKinds.ENTRY_CREATE)
-    val modifyWatch = path.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY)
-    val deleteWatch = path.register(watchService, StandardWatchEventKinds.ENTRY_DELETE)
+    path.register(watchService, StandardWatchEventKinds.ENTRY_CREATE)
+    path.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY)
+    path.register(watchService, StandardWatchEventKinds.ENTRY_DELETE)
 
     val scheduledAction = Runnable {
-        val pathsCreated = createWatch.pollEvents()
+        val watch = watchService.poll() ?: return@Runnable
+
+        val events = watch.pollEvents()
+        val pathsCreated = events.filter { it.kind() == StandardWatchEventKinds.ENTRY_CREATE }
             .map { it.context() }
             .filterIsInstance(Path::class.java)
-        val pathsModified = modifyWatch.pollEvents()
+        val pathsModified = events.filter { it.kind() == StandardWatchEventKinds.ENTRY_MODIFY }
             .map { it.context() }
             .filterIsInstance(Path::class.java)
-        val pathsDeleted = deleteWatch.pollEvents()
+        val pathsDeleted = events.filter { it.kind() == StandardWatchEventKinds.ENTRY_DELETE }
             .map { it.context() }
             .filterIsInstance(Path::class.java)
 

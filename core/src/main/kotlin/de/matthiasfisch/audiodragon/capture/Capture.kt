@@ -10,6 +10,7 @@ import de.matthiasfisch.audiodragon.writer.AudioFileWriter
 import io.reactivex.Flowable
 import io.reactivex.processors.PublishProcessor
 import mu.KotlinLogging
+import java.nio.file.Path
 import java.util.concurrent.locks.ReentrantLock
 import javax.sound.sampled.AudioFormat
 import kotlin.concurrent.withLock
@@ -49,6 +50,7 @@ class Capture private constructor(
     private val trackStartedPublisher = PublishProcessor.create<Unit>()
     private val trackEndedPublisher = PublishProcessor.create<Unit>()
     private val trackRecognizedPublisher = PublishProcessor.create<TrackData>()
+    private val trackWrittenPublisher = PublishProcessor.create<Path>()
     private val captureStartedPublisher = PublishProcessor.create<Unit>()
     private val captureStoppedPublisher = PublishProcessor.create<Unit>()
     private val captureStopRequestedPublisher = PublishProcessor.create<Unit>()
@@ -116,6 +118,7 @@ class Capture private constructor(
             this.trackData = null
         }
         fileWriter.writeToFileAsync(audio, trackData)
+            .thenAccept { trackWrittenPublisher.onNext(it) }
 
         if (stopRequested) {
             stop()
@@ -126,6 +129,7 @@ class Capture private constructor(
     fun trackStartEvents() = Flowable.fromPublisher(trackStartedPublisher)
     fun trackEndedEvents() = Flowable.fromPublisher(trackEndedPublisher)
     fun trackRecognizedEvents() = Flowable.fromPublisher(trackRecognizedPublisher)
+    fun trackWrittenEvents() = Flowable.fromPublisher(trackWrittenPublisher)
     fun captureStartedEvents() = Flowable.fromPublisher(captureStartedPublisher)
     fun captureStoppedEvents() = Flowable.fromPublisher(captureStoppedPublisher)
     fun captureStopRequestedEvents() = Flowable.fromPublisher(captureStopRequestedPublisher)

@@ -8,10 +8,13 @@ import de.matthiasfisch.audiodragon.library.peristence.LibraryRepository
 import de.matthiasfisch.audiodragon.library.peristence.SortOrder
 import de.matthiasfisch.audiodragon.library.watchDirectory
 import de.matthiasfisch.audiodragon.types.LibraryItemDTO
+import de.matthiasfisch.audiodragon.types.TrackWrittenEventDTO
 import mu.KotlinLogging
+import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
 import java.io.OutputStream
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import javax.imageio.ImageIO
@@ -33,7 +36,7 @@ class LibraryService(private val libraryEventBroker: LibraryEventBroker, private
         CompletableFuture.supplyAsync {
             reinitializeLibrary()
         }.thenRun {
-            watchLibrary()
+            watchLibrary() // TODO: Fix watcher
         }
     }
 
@@ -73,6 +76,13 @@ class LibraryService(private val libraryEventBroker: LibraryEventBroker, private
     fun getItemBackCover(filePath: Path, out: OutputStream, formatName: String) {
         val item = libraryPersistence.getItem(filePath) ?: throw NotFoundException("File with path $filePath is not in library.")
         ImageIO.write(item.backCoverart.value, formatName, out)
+    }
+
+    @EventListener
+    fun onTrackWritten(event: TrackWrittenEventDTO) {
+        val item = LibraryScanner.scanFile(Paths.get(event.path))
+        libraryPersistence.upsertItem(item)
+        libraryEventBroker.sendLibraryRefreshed()
     }
 
     private fun reinitializeLibrary() {
