@@ -1,6 +1,6 @@
 package de.matthiasfisch.audiodragon.controller
 
-import de.matthiasfisch.audiodragon.model.getRecordableAudioSources
+import de.matthiasfisch.audiodragon.model.getAudioPlatform
 import de.matthiasfisch.audiodragon.types.AudioFormatDTO
 import de.matthiasfisch.audiodragon.types.AudioSourceDTO
 import de.matthiasfisch.audiodragon.util.AudioSourceId
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/v1/sources")
 class AudioSourceController {
     @GetMapping
-    fun getAudioSources() = getRecordableAudioSources().map{ AudioSourceDTO(it) }
+    fun getAudioSources() = getAudioPlatform().getRecordableAudioSources().map{ AudioSourceDTO(it) }
 
     @GetMapping("/{sourceId}/formats")
     fun getAudioFormats(@PathVariable("sourceId") sourceId: AudioSourceId) =

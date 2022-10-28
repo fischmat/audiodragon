@@ -7,6 +7,7 @@ import de.matthiasfisch.audiodragon.capture.Capture.Companion.capture
 import de.matthiasfisch.audiodragon.exception.CaptureOngoingException
 import de.matthiasfisch.audiodragon.exception.NoCaptureOngoingException
 import de.matthiasfisch.audiodragon.model.AudioSource
+import de.matthiasfisch.audiodragon.model.JASAudioSource
 import de.matthiasfisch.audiodragon.recognition.TrackRecognitionPostprocessor
 import de.matthiasfisch.audiodragon.recognition.musicbrainz.MusicBrainzTrackDataLoader
 import de.matthiasfisch.audiodragon.recognition.shazam.RapidApiShazamTrackRecognizer
@@ -70,7 +71,8 @@ class CaptureService(val settingsService: SettingsService, val captureEventBroke
 
     private fun createRecording(audioSource: AudioSource, audioFormat: AudioFormat) = with(settingsService.settings) {
         val bufferFactory = getBufferFactory()
-        JavaAudioSystemRecording(audioSource, audioFormat, bufferFactory, recording.buffer.batchSize)
+        // FIXME Downcast
+        JavaAudioSystemRecording(audioSource as JASAudioSource, audioFormat, bufferFactory, recording.buffer.batchSize)
     }
 
     private fun getBufferFactory() = with(settingsService.settings) {

@@ -6,17 +6,11 @@ import javax.sound.sampled.AudioFormat
 
 data class AudioSourceDTO(
     val id: String,
-    val name: String,
-    val vendor: String,
-    val description: String,
-    val version: String
+    val name: String
 ) {
     constructor(audioSource: AudioSource) : this(
         audioSource.getId(),
-        audioSource.name,
-        audioSource.vendor,
-        audioSource.description,
-        audioSource.version
+        audioSource.name
     )
 }
 
