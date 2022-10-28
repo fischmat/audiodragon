@@ -8,11 +8,12 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.date.shouldBeAfter
 import io.kotest.matchers.date.shouldBeBefore
+import io.kotest.matchers.date.shouldNotBeBefore
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.delay
 import org.flywaydb.core.Flyway
 import java.awt.Color
 import java.awt.image.BufferedImage
@@ -47,9 +48,10 @@ class LibraryRepositoryTest : FunSpec({
         actual.length shouldBe expected.length
     }
 
-    fun addMockItems(): Triple<LibraryItem, LibraryItem, LibraryItem> {
+    suspend fun addMockItems(): Triple<LibraryItem, LibraryItem, LibraryItem> {
         val asura = LibraryItem(
             filePath = Paths.get("/asura.mp3"),
+            updatedAt = Instant.now(),
             title = "Asura",
             artist = "Charlotte de Witte",
             album = "Asura EP",
@@ -57,22 +59,26 @@ class LibraryRepositoryTest : FunSpec({
             labels = listOf("KNTXT"),
             length = 7.minutes + 49.seconds
         )
+        subject.upsertItem(asura)
+        delay(500)
         val soma = LibraryItem(
             filePath = Paths.get("/soma.mp3"),
+            updatedAt = Instant.now(),
             title = "Soma",
             artist = "Charlotte de Witte",
             album = "Asura EP",
             genres = listOf("Techno")
         )
+        subject.upsertItem(soma)
+        delay(500)
         val attss = LibraryItem(
             filePath = Paths.get("/attss.mp3"),
+            updatedAt = Instant.now(),
             title = "All The Things She Said 2020",
             artist = "DJ Gollum",
             album = "All The Things She Said 2020",
             genres = listOf("Hands Up", "EDM"),
         )
-        subject.upsertItem(asura)
-        subject.upsertItem(soma)
         subject.upsertItem(attss)
         return Triple(asura, soma, attss)
     }
@@ -185,7 +191,7 @@ class LibraryRepositoryTest : FunSpec({
             foundItem.filePath shouldBe path
             foundItem.addedAt.shouldNotBeNull()
             foundItem.updatedAt.shouldNotBeNull()
-            foundItem.updatedAt!! shouldBeAfter foundItem.addedAt!!
+            foundItem.updatedAt!! shouldNotBeBefore foundItem.addedAt!!
             foundItem.title shouldBe "Soma"
             foundItem.artist shouldBe "Charlotte de Witte"
             foundItem.album shouldBe "Asura EP"

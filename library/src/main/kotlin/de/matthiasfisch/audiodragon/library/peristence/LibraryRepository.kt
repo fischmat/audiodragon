@@ -162,8 +162,8 @@ class LibraryRepository(dbFilePath: Path) {
             )
             .values(
                 item.filePath.absolutePathString(),
-                Timestamp(item.filePath.toFile().lastModified()),
-                Timestamp(item.filePath.toFile().lastModified()),
+                Timestamp(item.addedAt?.toEpochMilli() ?: item.filePath.toFile().lastModified()),
+                Timestamp(item.updatedAt?.toEpochMilli() ?: item.filePath.toFile().lastModified()),
                 item.title,
                 item.artist,
                 item.album,
