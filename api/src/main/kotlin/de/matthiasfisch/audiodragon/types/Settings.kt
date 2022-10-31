@@ -1,9 +1,6 @@
 package de.matthiasfisch.audiodragon.types
 
-import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonSubTypes
-import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.annotation.*
 import java.nio.file.Paths
 
 const val SETTINGS_VERSION = 1
@@ -17,17 +14,15 @@ data class Settings(
     val library: LibrarySettings
 )
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "platform")
-@JsonSubTypes(
-    JsonSubTypes.Type(value = JASRecordingSettings::class, name = "java")
-)
 @JsonIgnoreProperties(ignoreUnknown = true)
-abstract class RecordingSettings(
+data class RecordingSettings(
+    val platform: PlatformType,
     val buffer: BufferSettings
 )
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-class JASRecordingSettings(buffer: BufferSettings): RecordingSettings(buffer)
+enum class PlatformType {
+    @JsonProperty("java") JAVA_AUDIO_SYSTEM, @JsonProperty("xt-audio") XT_AUDIO
+}
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes(

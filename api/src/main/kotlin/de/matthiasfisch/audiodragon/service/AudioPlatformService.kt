@@ -4,6 +4,7 @@ import de.matthiasfisch.audiodragon.buffer.DiskSpillingAudioBuffer
 import de.matthiasfisch.audiodragon.buffer.InMemoryAudioBuffer
 import de.matthiasfisch.audiodragon.model.AudioSource
 import de.matthiasfisch.audiodragon.model.JavaAudioPlatform
+import de.matthiasfisch.audiodragon.model.XtAudioPlatform
 import de.matthiasfisch.audiodragon.types.*
 import de.matthiasfisch.audiodragon.util.AudioSourceId
 import de.matthiasfisch.audiodragon.util.getId
@@ -34,9 +35,9 @@ class AudioPlatformService(private val settingsService: SettingsService) {
     }
 
     fun getAudioPlatform() = with(settingsService.settings) {
-        when(recording) {
-            is JASRecordingSettings -> JavaAudioPlatform()
-            else -> throw IllegalArgumentException("Unknown audio platform ${recording.javaClass}")
+        when(recording.platform) {
+            PlatformType.JAVA_AUDIO_SYSTEM -> JavaAudioPlatform()
+            PlatformType.XT_AUDIO -> XtAudioPlatform()
         }
     }
 

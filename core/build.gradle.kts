@@ -18,6 +18,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
     implementation("net.jthink:jaudiotagger:3.0.1")
     implementation("com.cloudburst:java-lame:3.98.4")
+    implementation("com.github.sjoerdvankreel:xt.audio:2.0")
     implementation("io.github.microutils:kotlin-logging-jvm:2.1.23")
     testImplementation("io.kotest:kotest-runner-junit5:5.4.2")
 }
