@@ -1,7 +1,5 @@
 package de.matthiasfisch.audiodragon.service
 
-import de.matthiasfisch.audiodragon.buffer.DiskSpillingAudioBuffer
-import de.matthiasfisch.audiodragon.buffer.InMemoryAudioBuffer
 import de.matthiasfisch.audiodragon.capture.Capture
 import de.matthiasfisch.audiodragon.capture.Capture.Companion.capture
 import de.matthiasfisch.audiodragon.exception.CaptureOngoingException
@@ -10,7 +8,6 @@ import de.matthiasfisch.audiodragon.model.AudioSource
 import de.matthiasfisch.audiodragon.recognition.TrackRecognitionPostprocessor
 import de.matthiasfisch.audiodragon.recognition.musicbrainz.MusicBrainzTrackDataLoader
 import de.matthiasfisch.audiodragon.recognition.shazam.RapidApiShazamTrackRecognizer
-import de.matthiasfisch.audiodragon.recording.JavaAudioSystemRecording
 import de.matthiasfisch.audiodragon.splitting.TrackBoundsDetector
 import de.matthiasfisch.audiodragon.types.*
 import de.matthiasfisch.audiodragon.util.AudioSourceId
@@ -18,7 +15,6 @@ import de.matthiasfisch.audiodragon.util.getId
 import de.matthiasfisch.audiodragon.writer.MP3FileWriter
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
-import java.lang.IllegalArgumentException
 import javax.sound.sampled.AudioFormat
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -26,7 +22,11 @@ import kotlin.time.Duration.Companion.seconds
 private val LOGGER = KotlinLogging.logger {}
 
 @Service
-class CaptureService(val settingsService: SettingsService, val captureEventBroker: CaptureEventBroker) {
+class CaptureService(
+    val settingsService: SettingsService,
+    val captureEventBroker: CaptureEventBroker,
+    val audioPlatformService: AudioPlatformService
+) {
     private val ongoingCaptures = mutableMapOf<AudioSourceId, Capture>()
 
     fun startCapture(
@@ -41,7 +41,7 @@ class CaptureService(val settingsService: SettingsService, val captureEventBroke
 
         val capture = audioSource.capture(
             audioFormat = audioFormat,
-            recording = createRecording(audioSource, audioFormat),
+            recording = audioPlatformService.createRecording(audioSource, audioFormat),
             trackBoundsDetector = getTrackBoundsDetector(),
             trackRecognizer = if (recognizeSongs) getTrackRecognizer() else null,
             fileWriter = getFileWriter(fileOutputOptions)
@@ -68,19 +68,6 @@ class CaptureService(val settingsService: SettingsService, val captureEventBroke
         LOGGER.info { "Capture on audio device ${audioSource.name} will be stopped after current track." }
     }
 
-    private fun createRecording(audioSource: AudioSource, audioFormat: AudioFormat) = with(settingsService.settings) {
-        val bufferFactory = getBufferFactory()
-        JavaAudioSystemRecording(audioSource, audioFormat, bufferFactory, recording.buffer.batchSize)
-    }
-
-    private fun getBufferFactory() = with(settingsService.settings) {
-        when(val buffer = recording.buffer) {
-            is InMemoryBufferSettings -> { format: AudioFormat -> InMemoryAudioBuffer(format, buffer.initialBufferSize) }
-            is DiskSpillingBufferSettings -> { format: AudioFormat -> DiskSpillingAudioBuffer(format, buffer.inMemoryBufferMaxSize) }
-            else -> throw IllegalArgumentException("Unknown buffer settings.")
-        }
-    }
-
     private fun getTrackBoundsDetector() = with(settingsService.settings) {
         TrackBoundsDetector(splitting.splitAfterSilenceMillis.milliseconds, splitting.silenceRmsTolerance)
     }
@@ -101,12 +88,13 @@ class CaptureService(val settingsService: SettingsService, val captureEventBroke
     }
 
     private fun getRecognitionPostprocessor(config: RecognitionPostprocessorConfig): TrackRecognitionPostprocessor =
-        when(config) {
+        when (config) {
             is MusicBrainzPostprocessorConfig -> MusicBrainzTrackDataLoader(
                 config.minScore,
                 config.preferInput,
                 config.userAgent
             )
+
             else -> throw IllegalArgumentException("Unknown postprocessor type.")
         }
 

@@ -17,10 +17,17 @@ data class Settings(
     val library: LibrarySettings
 )
 
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "platform")
+@JsonSubTypes(
+    JsonSubTypes.Type(value = JASRecordingSettings::class, name = "java")
+)
 @JsonIgnoreProperties(ignoreUnknown = true)
-data class RecordingSettings(
+abstract class RecordingSettings(
     val buffer: BufferSettings
 )
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+class JASRecordingSettings(buffer: BufferSettings): RecordingSettings(buffer)
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes(

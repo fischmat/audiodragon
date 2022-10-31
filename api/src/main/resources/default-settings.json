@@ -1,5 +1,6 @@
 {
   "recording": {
+    "platform": "java",
     "buffer": {
       "type": "hybrid",
       "batchSize": 2048,

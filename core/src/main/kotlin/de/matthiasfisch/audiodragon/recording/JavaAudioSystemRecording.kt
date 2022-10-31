@@ -2,7 +2,7 @@ package de.matthiasfisch.audiodragon.recording
 
 import de.matthiasfisch.audiodragon.buffer.AudioBuffer
 import de.matthiasfisch.audiodragon.buffer.ResettableAudioBuffer
-import de.matthiasfisch.audiodragon.model.AudioSource
+import de.matthiasfisch.audiodragon.model.JASAudioSource
 import io.reactivex.Flowable
 import io.reactivex.processors.PublishProcessor
 import mu.KotlinLogging
@@ -15,7 +15,7 @@ import javax.sound.sampled.AudioSystem
 private val LOGGER = KotlinLogging.logger {}
 
 open class JavaAudioSystemRecording(
-    val audioSource: AudioSource,
+    val audioSource: JASAudioSource,
     val audioFormat: AudioFormat,
     bufferFactory: (AudioFormat) -> AudioBuffer,
     private val blockSize: Int,

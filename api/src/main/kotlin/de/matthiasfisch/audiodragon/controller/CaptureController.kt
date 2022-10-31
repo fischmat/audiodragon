@@ -2,11 +2,11 @@ package de.matthiasfisch.audiodragon.controller
 
 import de.matthiasfisch.audiodragon.exception.NoCaptureOngoingException
 import de.matthiasfisch.audiodragon.model.TrackData
+import de.matthiasfisch.audiodragon.service.AudioPlatformService
 import de.matthiasfisch.audiodragon.service.CaptureService
 import de.matthiasfisch.audiodragon.types.CaptureDTO
 import de.matthiasfisch.audiodragon.types.StartCaptureInstructionDTO
 import de.matthiasfisch.audiodragon.util.AudioSourceId
-import de.matthiasfisch.audiodragon.util.getAudioSource
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -19,12 +19,12 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/v1/capture")
-class CaptureController(val captureService: CaptureService) {
+class CaptureController(val captureService: CaptureService, val audioPlatformService: AudioPlatformService) {
 
     @PostMapping
     fun startCapture(@RequestBody instruction: StartCaptureInstructionDTO) = with(instruction) {
         captureService.startCapture(
-            audioSourceId.getAudioSource(),
+            audioPlatformService.resolveAudioSource(audioSourceId),
             format.toAudioSystemFormat(),
             recognizeSongs,
             outputFormat
@@ -40,20 +40,29 @@ class CaptureController(val captureService: CaptureService) {
         getCaptureForId(audioSourceId).currentTrack()
 
     @PutMapping("/{audioSourceId}/track")
-    fun updateCurrentTrack(@PathVariable("audioSourceId") audioSourceId: AudioSourceId, @RequestBody trackData: TrackData) =
+    fun updateCurrentTrack(
+        @PathVariable("audioSourceId") audioSourceId: AudioSourceId,
+        @RequestBody trackData: TrackData
+    ) =
         getCaptureForId(audioSourceId).mergeTrackData(trackData)
 
     @DeleteMapping("/{audioSourceId}")
-    fun stopRecording(@PathVariable("audioSourceId") audioSourceId: AudioSourceId, @RequestParam(required = false) immediately: Boolean?) {
+    fun stopRecording(
+        @PathVariable("audioSourceId") audioSourceId: AudioSourceId,
+        @RequestParam(required = false) immediately: Boolean?
+    ) {
+        val audioSource = audioPlatformService.resolveAudioSource(audioSourceId)
         if (immediately != false) {
-            captureService.stopCapture(audioSourceId.getAudioSource())
+            captureService.stopCapture(audioSource)
         } else {
-            captureService.stopCaptureAfterCurrentTrack(audioSourceId.getAudioSource())
+            captureService.stopCaptureAfterCurrentTrack(audioSource)
         }
     }
 
-    private fun getCaptureForId(audioSourceId: AudioSourceId) = captureService.getOngoingCapture(audioSourceId.getAudioSource())
+    private fun getCaptureForId(audioSourceId: AudioSourceId) = captureService.getOngoingCapture(
+        audioPlatformService.resolveAudioSource(audioSourceId)
+    )
         ?: throw NoCaptureOngoingException(
-            audioSourceId.getAudioSource()
+            audioPlatformService.resolveAudioSource(audioSourceId)
         )
 }
