@@ -32,7 +32,7 @@ object LibraryScanner {
             try {
                 it.value.join()
             } catch (e: CompletionException) {
-                LOGGER.warn(e) { "Could not process file ${it.key}." }
+                LOGGER.warn { "Could not process file ${it.key}: ${e.message}" }
                 null
             }
         }.values.filterNotNull()
