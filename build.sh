@@ -24,7 +24,7 @@ CLIENT_SUBMODULE_PATH="$PROJECT_ROOT/audiodragon-client"
 echo "Building $PROJECT_NAME - version $PROJECT_VERSION"
 
 echo "1. Checking out submodule"
-git submodule update --recursive
+git pull --recurse-submodules
 
 echo "2. Building client"
 cd "$CLIENT_SUBMODULE_PATH"
