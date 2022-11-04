@@ -1,3 +1,7 @@
+import com.github.jk1.license.filter.DependencyFilter
+import com.github.jk1.license.filter.LicenseBundleNormalizer
+import com.github.jk1.license.render.InventoryHtmlReportRenderer
+import com.github.jk1.license.render.ReportRenderer
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.tasks.bundling.BootJar
 
@@ -6,6 +10,7 @@ plugins {
 	id("io.spring.dependency-management") version "1.0.13.RELEASE"
 	kotlin("jvm") version "1.6.21"
 	kotlin("plugin.spring") version "1.6.21"
+	id("com.github.jk1.dependency-license-report") version "2.0"
 }
 
 java.sourceCompatibility = JavaVersion.VERSION_17
@@ -60,4 +65,16 @@ tasks.withType<Test> {
 
 tasks.named<BootJar>("bootJar") {
 	mainClass.set("de.matthiasfisch.audiodragon.AudiodragonApplicationKt")
+}
+
+licenseReport {
+	renderers = arrayOf<ReportRenderer>(
+		InventoryHtmlReportRenderer(
+			"report.html",
+			"Backend"
+		)
+	)
+	filters = arrayOf<DependencyFilter>(LicenseBundleNormalizer())
+	excludeBoms = true
+	allowedLicensesFile = File("$projectDir/config/allowed-licenses.json")
 }
