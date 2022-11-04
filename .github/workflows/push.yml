@@ -1,4 +1,4 @@
-name: Audiodragon Actions
+name: Audiodragon Push Action
 run-name: Push Action for ${{ github.sha }} on ${{ github.ref_name }}
 on: [push]
 jobs:
