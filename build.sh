@@ -25,6 +25,7 @@ echo "Building $PROJECT_NAME - version $PROJECT_VERSION"
 
 echo "1. Checking out submodule"
 git pull --recurse-submodules
+git submodule update --recursive
 
 echo "2. Building client"
 cd "$CLIENT_SUBMODULE_PATH"
