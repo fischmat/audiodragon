@@ -20,3 +20,10 @@ jobs:
           node-version: 16
       - run: cd ${{ github.workspace }}
       - run: ./build.sh
+      - run: PROJECT_NAME=$(./gradlew properties -q | grep "^name:" | awk '{print $2}')
+      - run: PROJECT_VERSION=$(./gradlew properties -q | grep "^version:" | awk '{print $2}')
+      - name: Archive snapshot
+        uses: actions/upload-artifact@v3
+        with:
+          name: $PROJECT_NAME-$PROJECT_VERSION.jar
+          path: build/libs/$PROJECT_NAME-$PROJECT_VERSION.jar
