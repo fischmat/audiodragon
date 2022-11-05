@@ -3,7 +3,7 @@ run-name: Snapshot for ${{ github.sha }}
 on:
   push:
     branches:
-      - actions # FIXME
+      - main
 jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
