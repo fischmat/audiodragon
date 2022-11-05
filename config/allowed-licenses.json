@@ -1,0 +1,91 @@
+{
+  "allowedLicenses": [
+    {
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleLicense": "Eclipse Public License - v 1.0"
+    },
+    {
+      "moduleLicense": "Eclipse Public License - v 2.0"
+    },
+    {
+      "moduleLicense": "Creative Commons Legal Code"
+    },
+    {
+      "moduleLicense": "PUBLIC DOMAIN"
+    },
+    {
+      "moduleLicense": "The 2-Clause BSD License"
+    },
+    {
+      "moduleLicense": "The 3-Clause BSD License"
+    },
+    {
+      "moduleLicense": "MIT-0"
+    },
+    {
+      "moduleLicense": "MIT License"
+    },
+    {
+      "moduleLicense": null,
+      "moduleVersion": "3.0.0",
+      "moduleName": "com.squareup.okio:okio"
+    },
+    {
+      "moduleLicense": null,
+      "moduleVersion": "3.98.4",
+      "moduleName": "com.cloudburst:java-lame"
+    },
+    {
+      "moduleLicense": "GNU LESSER GENERAL PUBLIC LICENSE, Version 2.1",
+      "moduleVersion": "1.2.11",
+      "moduleName": "ch.qos.logback:logback-classic"
+    },
+    {
+      "moduleLicense": "GNU LESSER GENERAL PUBLIC LICENSE, Version 2.1",
+      "moduleVersion": "1.2.11",
+      "moduleName": "ch.qos.logback:logback-core"
+    },
+    {
+      "moduleLicense": "GNU Lesser General Public License v3.0",
+      "moduleVersion": "3.6.6",
+      "moduleName": "com.electronwill.night-config:core"
+    },
+    {
+      "moduleLicense": "GNU Lesser General Public License v3.0",
+      "moduleVersion": "3.6.6",
+      "moduleName": "com.electronwill.night-config:toml"
+    },
+    {
+      "moduleLicense": "GNU GENERAL PUBLIC LICENSE, Version 2 + Classpath Exception",
+      "moduleVersion": "1.3.5",
+      "moduleName": "jakarta.annotation:jakarta.annotation-api"
+    },
+    {
+      "moduleLicense": "COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0",
+      "moduleVersion": "2.3.1",
+      "moduleName": "javax.xml.bind:jaxb-api"
+    },
+    {
+      "moduleLicense": "COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.1",
+      "moduleVersion": "2.3.1",
+      "moduleName": "javax.xml.bind:jaxb-api"
+    },
+    {
+      "moduleLicense": "GNU GENERAL PUBLIC LICENSE, Version 2 + Classpath Exception",
+      "moduleVersion": "2.3.1",
+      "moduleName": "javax.xml.bind:jaxb-api"
+    },
+    {
+      "moduleLicense": "LGPL",
+      "moduleVersion": "3.0.1",
+      "moduleName": "net.jthink:jaudiotagger"
+    },
+    {
+      "moduleLicense": "COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0",
+      "moduleVersion": "9.0.65",
+      "moduleName": "org.apache.tomcat.embed:tomcat-embed-core"
+    }
+  ]
+}
