@@ -1,5 +1,5 @@
 name: Audiodragon Snapshot Action
-run-name: Push Action for ${{ github.sha }} on ${{ github.ref_name }}
+run-name: Snapshot for ${{ github.sha }}
 on:
   push:
     branches:
@@ -20,10 +20,12 @@ jobs:
           node-version: 16
       - run: cd ${{ github.workspace }}
       - run: ./build.sh
-      - run: PROJECT_NAME=$(./gradlew properties -q | grep "^name:" | awk '{print $2}')
-      - run: PROJECT_VERSION=$(./gradlew properties -q | grep "^version:" | awk '{print $2}')
+      - run: |
+          PROJECT_NAME=$(./gradlew properties -q | grep "^name:" | awk '{print $2}')
+          PROJECT_VERSION=$(./gradlew properties -q | grep "^version:" | awk '{print $2}')
+          cp build/libs/$PROJECT_NAME-$PROJECT_VERSION.jar audiodragon-snapshot.jar
       - name: Archive snapshot
         uses: actions/upload-artifact@v3
         with:
-          name: $PROJECT_NAME-$PROJECT_VERSION.jar
-          path: build/libs/$PROJECT_NAME-$PROJECT_VERSION.jar
+          name: audiodragon-snapshot-${{ github.sha }}.jar
+          path: audiodragon-snapshot.jar
