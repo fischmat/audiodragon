@@ -23,18 +23,14 @@ CLIENT_SUBMODULE_PATH="$PROJECT_ROOT/audiodragon-client"
 
 echo "Building $PROJECT_NAME - version $PROJECT_VERSION"
 
-echo "1. Checking out submodule"
-git pull --recurse-submodules
-git submodule update --init --recursive
-
-echo "2. Building client"
+echo "1. Building client"
 cd "$CLIENT_SUBMODULE_PATH"
 npm install
 npm run build
 cd -
 rm package-lock.json
 
-echo "3. Copying client"
+echo "2. Copying client"
 CLIENT_DIST_PATH="$CLIENT_SUBMODULE_PATH/dist"
 CLIENT_RESOURCES_PATH="$PROJECT_ROOT/src/main/resources/static"
 if [ -d "$CLIENT_DIST_PATH" ]; then
@@ -45,7 +41,7 @@ else
   exit 1
 fi
 
-echo "4. Building application"
+echo "3. Building application"
 cd "$PROJECT_ROOT"
 ./gradlew clean build
 
