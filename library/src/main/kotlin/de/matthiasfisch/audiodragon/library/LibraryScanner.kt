@@ -74,7 +74,7 @@ object LibraryScanner {
                 length = file.mP3AudioHeader.preciseTrackLength.seconds
             )
         } else {
-            throw IllegalArgumentException("MP3 file $path does not have an ID3 header.")
+            throw NoID3TagException(path)
         }
     }
 

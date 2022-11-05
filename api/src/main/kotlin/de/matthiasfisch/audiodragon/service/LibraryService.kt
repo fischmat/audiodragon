@@ -2,6 +2,7 @@ package de.matthiasfisch.audiodragon.service
 
 import de.matthiasfisch.audiodragon.exception.NotFoundException
 import de.matthiasfisch.audiodragon.library.DirectoryWatcher
+import de.matthiasfisch.audiodragon.library.LibraryException
 import de.matthiasfisch.audiodragon.library.LibraryScanner
 import de.matthiasfisch.audiodragon.library.peristence.LibraryItemSortField
 import de.matthiasfisch.audiodragon.library.peristence.LibraryRepository
@@ -19,6 +20,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import javax.imageio.ImageIO
 import kotlin.io.path.absolutePathString
+import kotlin.io.path.createDirectories
 
 private val LOGGER = KotlinLogging.logger {}
 
@@ -80,9 +82,13 @@ class LibraryService(private val libraryEventBroker: LibraryEventBroker, private
 
     @EventListener
     fun onTrackWritten(event: TrackWrittenEventDTO) {
-        val item = LibraryScanner.scanFile(Paths.get(event.path))
-        libraryPersistence.upsertItem(item)
-        libraryEventBroker.sendLibraryRefreshed()
+        try {
+            val item = LibraryScanner.scanFile(Paths.get(event.path))
+            libraryPersistence.upsertItem(item)
+            libraryEventBroker.sendLibraryRefreshed()
+        } catch (e: LibraryException) {
+            LOGGER.info { "Could not update library with written track ${event.path}: ${e.message}" }
+        }
     }
 
     private fun reinitializeLibrary() {
