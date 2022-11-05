@@ -87,6 +87,8 @@ class LibraryService(private val libraryEventBroker: LibraryEventBroker, private
 
     private fun reinitializeLibrary() {
         val libraryPath = settingsService.settings.output.path
+        libraryPath.createDirectories() // Create directory with parent if not exists
+
         LOGGER.info { "Updating library from files in $libraryPath." }
         try {
             val libraryItems = LibraryScanner.scanForTracks(libraryPath, executor = libraryScanExecutor)
