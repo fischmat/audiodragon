@@ -5,7 +5,7 @@ on:
     branches:
       - main
 jobs:
-  Create Snapshot:
+  create-snapshot:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
