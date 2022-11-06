@@ -2,7 +2,7 @@ name: Audiodragon Push Action
 run-name: Push Action for ${{ github.sha }} on ${{ github.ref_name }}
 on: [push]
 jobs:
-  Explore-GitHub-Actions:
+  Test Changes:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
