@@ -27,7 +27,7 @@ private const val PNG_MIME_TYPE = "image/png"
 
 fun addID3TagToMP3File(path: Path, trackData: TrackData, artworkLoader: ArtworkUrlLoader = defaultArtworkLoader(), artworkDimension: Int = 500) {
     val file = path.toFile()
-    require(file.isFile) { "File $path does not exist." }
+    require(file.isFile) { "File $path does not exist or is not a file." }
     require(file.canRead()) { "User is not allowed to read file $path." }
     require(file.canWrite()) { "User is not allowed to write file $path." }
 
@@ -67,6 +67,8 @@ private fun loadArtwork(url: String, artworkDimensions: Int, artworkLoader: Artw
         StandardArtwork().apply {
             binaryData = exportImage(scaledImage)
             imageUrl = url
+            width = scaledImage.width
+            height = scaledImage.height
             mimeType = PNG_MIME_TYPE
         }
     }
