@@ -13,7 +13,7 @@ class TrackBoundsDetector(private val minSilenceBetweenTracks: Duration, private
     private var currentTime: Duration = 0.milliseconds
     private var isSoundPresent: Boolean = false
 
-    operator fun invoke(chunk: AudioChunk): TrackState {
+    fun process(chunk: AudioChunk): TrackState {
         currentTime += chunk.pcmData.duration(chunk.audioFormat)
         if (isSilence(chunk.pcmData, chunk.audioFormat)) {
             if (lastSoundTime != null && isSoundPresent) {

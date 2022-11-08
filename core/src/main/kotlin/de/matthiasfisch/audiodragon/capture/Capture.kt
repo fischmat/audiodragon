@@ -58,7 +58,7 @@ class Capture private constructor(
     init {
         recording.audioChunkFlowable()
             .subscribe {
-                when (trackBoundsDetector(it)) {
+                when (trackBoundsDetector.process(it)) {
                     TrackState.TRACK_STARTED -> onTrackStarted()
                     TrackState.TRACK_ENDED -> onTrackEnded()
                     TrackState.SILENCE -> {}
