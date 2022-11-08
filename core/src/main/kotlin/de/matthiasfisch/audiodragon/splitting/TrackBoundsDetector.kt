@@ -1,22 +1,23 @@
 package de.matthiasfisch.audiodragon.splitting
 
 import de.matthiasfisch.audiodragon.model.PcmData
+import de.matthiasfisch.audiodragon.model.duration
 import de.matthiasfisch.audiodragon.model.getRMS
 import de.matthiasfisch.audiodragon.recording.AudioChunk
-import java.time.Instant
-import java.time.temporal.ChronoUnit
 import javax.sound.sampled.AudioFormat
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 class TrackBoundsDetector(private val minSilenceBetweenTracks: Duration, private val silenceRmsThreshold: Float) {
-    private var lastSoundTime: Instant? = null
+    private var lastSoundTime: Duration? = null
+    private var currentTime: Duration = 0.milliseconds
     private var isSoundPresent: Boolean = false
 
     operator fun invoke(chunk: AudioChunk): TrackState {
+        currentTime += chunk.pcmData.duration(chunk.audioFormat)
         if (isSilence(chunk.pcmData, chunk.audioFormat)) {
             if (lastSoundTime != null && isSoundPresent) {
-                val timeSinceLastSound = lastSoundTime!!.until(Instant.now(), ChronoUnit.MILLIS).milliseconds
+                val timeSinceLastSound = currentTime - lastSoundTime!!
                 if (timeSinceLastSound >= minSilenceBetweenTracks) {
                     isSoundPresent = false
                     return TrackState.TRACK_ENDED
@@ -25,7 +26,7 @@ class TrackBoundsDetector(private val minSilenceBetweenTracks: Duration, private
         } else {
             val soundPreviouslyPresent = isSoundPresent
             isSoundPresent = true
-            lastSoundTime = Instant.now()
+            lastSoundTime = currentTime
             if (!soundPreviouslyPresent) {
                 return TrackState.TRACK_STARTED
             }
