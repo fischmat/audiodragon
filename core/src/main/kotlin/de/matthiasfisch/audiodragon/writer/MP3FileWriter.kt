@@ -8,6 +8,7 @@ import de.matthiasfisch.audiodragon.util.byteCountToDuration
 import de.matthiasfisch.audiodragon.util.durationToByteCount
 import mu.KotlinLogging
 import java.nio.file.Path
+import kotlin.io.path.createDirectories
 import kotlin.io.path.outputStream
 import kotlin.streams.asSequence
 import kotlin.time.Duration
@@ -27,6 +28,7 @@ class MP3FileWriter(
 
     override fun writeToFile(audioBuffer: AudioBuffer, trackData: TrackData?): Path {
         val targetPath = outputDirectory.resolve(filenameFor(trackData, "mp3"))
+        targetPath.parent.createDirectories()
         LOGGER.info { "Writing track to file $targetPath as MP3." }
 
         val audioFormat = audioBuffer.audioFormat()
