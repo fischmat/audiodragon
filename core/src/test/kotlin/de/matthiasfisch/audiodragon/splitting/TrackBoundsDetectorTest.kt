@@ -1,7 +1,7 @@
 package de.matthiasfisch.audiodragon.splitting
 
+import de.matthiasfisch.audiodragon.model.AudioChunk
 import de.matthiasfisch.audiodragon.model.AudioSource
-import de.matthiasfisch.audiodragon.recording.AudioChunk
 import de.matthiasfisch.audiodragon.util.PcmGenerator
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe

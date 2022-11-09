@@ -1,9 +1,9 @@
 package de.matthiasfisch.audiodragon.splitting
 
+import de.matthiasfisch.audiodragon.model.AudioChunk
 import de.matthiasfisch.audiodragon.model.PcmData
 import de.matthiasfisch.audiodragon.model.duration
 import de.matthiasfisch.audiodragon.model.getRMS
-import de.matthiasfisch.audiodragon.recording.AudioChunk
 import javax.sound.sampled.AudioFormat
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds

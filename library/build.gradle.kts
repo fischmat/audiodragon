@@ -15,11 +15,11 @@ dependencies {
     implementation(project(":core"))
 
     implementation("net.jthink:jaudiotagger:3.0.1")
-    implementation("org.jooq:jooq:3.14.16")
-    implementation("org.flywaydb:flyway-core:9.5.1")
+    implementation("org.jooq:jooq:3.17.5")
+    implementation("org.flywaydb:flyway-core:9.8.1")
     implementation("org.xerial:sqlite-jdbc:3.39.3.0")
-    implementation("io.github.microutils:kotlin-logging-jvm:2.1.23")
-    testImplementation("io.kotest:kotest-runner-junit5:5.4.2")
+    implementation("io.github.microutils:kotlin-logging-jvm:3.0.4")
+    testImplementation("io.kotest:kotest-runner-junit5:5.5.4")
 }
 
 tasks.withType<KotlinCompile> {
