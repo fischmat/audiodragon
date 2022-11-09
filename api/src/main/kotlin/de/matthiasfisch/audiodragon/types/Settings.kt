@@ -19,6 +19,7 @@ data class Settings(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class RecordingSettings(
+    val platform: String,
     val buffer: BufferSettings
 )
 

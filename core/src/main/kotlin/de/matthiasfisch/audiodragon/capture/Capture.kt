@@ -1,9 +1,9 @@
 package de.matthiasfisch.audiodragon.capture
 
 import de.matthiasfisch.audiodragon.model.AudioSource
+import de.matthiasfisch.audiodragon.model.Recording
 import de.matthiasfisch.audiodragon.model.TrackData
 import de.matthiasfisch.audiodragon.recognition.TrackRecognizer
-import de.matthiasfisch.audiodragon.recording.Recording
 import de.matthiasfisch.audiodragon.splitting.TrackBoundsDetector
 import de.matthiasfisch.audiodragon.splitting.TrackState
 import de.matthiasfisch.audiodragon.writer.AudioFileWriter
@@ -20,7 +20,7 @@ private val LOGGER = KotlinLogging.logger {}
 class Capture private constructor(
     val audioSource: AudioSource,
     val audioFormat: AudioFormat,
-    private val recording: Recording,
+    private val recording: Recording<*>,
     private val trackBoundsDetector: TrackBoundsDetector,
     private val trackRecognizer: TrackRecognizer?,
     private val fileWriter: AudioFileWriter
@@ -28,7 +28,7 @@ class Capture private constructor(
     companion object {
         fun AudioSource.capture(
             audioFormat: AudioFormat,
-            recording: Recording,
+            recording: Recording<*>,
             trackBoundsDetector: TrackBoundsDetector,
             trackRecognizer: TrackRecognizer?,
             fileWriter: AudioFileWriter

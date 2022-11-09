@@ -10,7 +10,6 @@ import de.matthiasfisch.audiodragon.model.AudioSource
 import de.matthiasfisch.audiodragon.recognition.TrackRecognitionPostprocessor
 import de.matthiasfisch.audiodragon.recognition.musicbrainz.MusicBrainzTrackDataLoader
 import de.matthiasfisch.audiodragon.recognition.shazam.RapidApiShazamTrackRecognizer
-import de.matthiasfisch.audiodragon.recording.JavaAudioSystemRecording
 import de.matthiasfisch.audiodragon.splitting.TrackBoundsDetector
 import de.matthiasfisch.audiodragon.types.*
 import de.matthiasfisch.audiodragon.util.AudioSourceId
@@ -26,7 +25,7 @@ import kotlin.time.Duration.Companion.seconds
 private val LOGGER = KotlinLogging.logger {}
 
 @Service
-class CaptureService(val settingsService: SettingsService, val captureEventBroker: CaptureEventBroker) {
+class CaptureService(val settingsService: SettingsService, val captureEventBroker: CaptureEventBroker, val audioPlatformService: AudioPlatformService) {
     private val ongoingCaptures = mutableMapOf<AudioSourceId, Capture>()
 
     fun startCapture(
@@ -70,7 +69,8 @@ class CaptureService(val settingsService: SettingsService, val captureEventBroke
 
     private fun createRecording(audioSource: AudioSource, audioFormat: AudioFormat) = with(settingsService.settings) {
         val bufferFactory = getBufferFactory()
-        JavaAudioSystemRecording(audioSource, audioFormat, bufferFactory, recording.buffer.batchSize)
+        val platform = audioPlatformService.getAudioPlatform()
+        platform.createRecording(audioSource, audioFormat, recording.buffer.batchSize, bufferFactory)
     }
 
     private fun getBufferFactory() = with(settingsService.settings) {

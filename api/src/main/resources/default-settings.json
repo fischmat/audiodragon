@@ -1,5 +1,6 @@
 {
   "recording": {
+    "platform": "java-audio",
     "buffer": {
       "type": "hybrid",
       "batchSize": 2048,
