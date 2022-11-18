@@ -12,6 +12,7 @@ import de.matthiasfisch.audiodragon.recognition.musicbrainz.MusicBrainzTrackData
 import de.matthiasfisch.audiodragon.recognition.shazam.RapidApiShazamTrackRecognizer
 import de.matthiasfisch.audiodragon.splitting.TrackBoundsDetector
 import de.matthiasfisch.audiodragon.types.*
+import de.matthiasfisch.audiodragon.types.settings.*
 import de.matthiasfisch.audiodragon.util.AudioSourceId
 import de.matthiasfisch.audiodragon.util.getId
 import de.matthiasfisch.audiodragon.writer.MP3FileWriter

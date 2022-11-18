@@ -50,6 +50,7 @@ open class RapidApiShazamTrackRecognizer(
     private val recognizerId = UUID.randomUUID()
 
     init {
+        httpClient.proxy
         require(apiKey.isNotBlank()) { "RapidAPI Shazam API key must not be blank." }
     }
 
