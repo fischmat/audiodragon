@@ -26,8 +26,10 @@ class ShazamRecognitionSettings(
     secondsUntilRecognition: Int,
     sampleSeconds: Int,
     maxRetries: Int,
-    postprocessors: List<RecognitionPostprocessorConfig>
-): RecognitionSettings(secondsUntilRecognition, sampleSeconds, maxRetries, postprocessors)
+    postprocessors: List<RecognitionPostprocessorConfig>,
+    override val apiBaseUrl: String?,
+    override val network: NetworkSettings?
+): RecognitionSettings(secondsUntilRecognition, sampleSeconds, maxRetries, postprocessors), APISettings
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes(JsonSubTypes.Type(value = MusicBrainzPostprocessorConfig::class, name = "musicbrainz"))
@@ -39,6 +41,7 @@ abstract class RecognitionPostprocessorConfig(
 @JsonIgnoreProperties(ignoreUnknown = true)
 class MusicBrainzPostprocessorConfig(
     val minScore: Int,
-    val userAgent: String,
-    preferInput: Boolean
-): RecognitionPostprocessorConfig(preferInput)
+    preferInput: Boolean,
+    override val apiBaseUrl: String?,
+    override val network: NetworkSettings?
+): RecognitionPostprocessorConfig(preferInput), APISettings

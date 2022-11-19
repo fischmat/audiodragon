@@ -4,6 +4,7 @@ import com.jayway.jsonpath.DocumentContext
 import com.jayway.jsonpath.JsonPath
 import de.matthiasfisch.audiodragon.model.TrackData
 import de.matthiasfisch.audiodragon.recognition.TrackRecognitionPostprocessor
+import de.matthiasfisch.audiodragon.util.ApiConfig
 import de.matthiasfisch.audiodragon.util.readNumberAtPath
 import de.matthiasfisch.audiodragon.util.readTextAtPath
 import de.matthiasfisch.audiodragon.util.readTextListAtPath
@@ -25,12 +26,15 @@ private val SONG_RELEASED_YEAR_PATH = JsonPath.compile("$.recordings[0].first-re
 private val SONG_GENRE_PATH = JsonPath.compile("$.recordings[0].tags[*].name")
 private val SONG_LENGTH_PATH = JsonPath.compile("$.recordings[0].length")
 
+private const val DEFAULT_API_BASE_URL = "https://musicbrainz.org"
+private const val DEFAULT_USER_AGENT = "AudioDragon (https://github.com/fischmat/audiodragon)"
+
 class MusicBrainzTrackDataLoader(
     private val minScore: Int,
     private val preferInput: Boolean,
-    private val userAgent: String
+    private val apiConfig: ApiConfig
 ) : TrackRecognitionPostprocessor {
-    private val httpClient = OkHttpClient()
+    private val httpClient = apiConfig.configure(OkHttpClient.Builder()).build()
 
     override fun augment(track: TrackData): TrackData {
         if (track.title == null || track.artist == null) {
@@ -53,7 +57,7 @@ class MusicBrainzTrackDataLoader(
         val request = Request.Builder()
             .get()
             .url(url)
-            .addHeader("user-agent", userAgent)
+            .addHeader("user-agent", apiConfig.userAgent ?: DEFAULT_USER_AGENT)
             .build()
 
         return httpClient.newCall(request).execute().use { response ->
@@ -93,6 +97,6 @@ class MusicBrainzTrackDataLoader(
     private fun getSearchEndpointUrl(track: TrackData): URL {
         val artistEncoded = URLEncoder.encode(track.artist, StandardCharsets.UTF_8)
         val titleEncoded = URLEncoder.encode(track.title, StandardCharsets.UTF_8)
-        return URL("https://musicbrainz.org/ws/2/recording/?query=recording:${titleEncoded}%20and%20artist:$artistEncoded&fmt=json&inc=")
+        return URL("${apiConfig.apiBaseUrlOverride ?: DEFAULT_API_BASE_URL}/ws/2/recording/?query=recording:${titleEncoded}%20and%20artist:$artistEncoded&fmt=json&inc=")
     }
 }

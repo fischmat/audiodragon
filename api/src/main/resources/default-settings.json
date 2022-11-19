@@ -17,8 +17,7 @@
       {
         "type": "musicbrainz",
         "preferInput": true,
-        "minScore": 90,
-        "userAgent": "AudioDragon (https://github.com/fischmat/audiodragon)"
+        "minScore": 90
       }
     ]
   },

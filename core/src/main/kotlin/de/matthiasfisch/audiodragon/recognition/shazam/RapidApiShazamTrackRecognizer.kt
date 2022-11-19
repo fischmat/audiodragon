@@ -7,13 +7,12 @@ import de.matthiasfisch.audiodragon.model.TrackData
 import de.matthiasfisch.audiodragon.model.duration
 import de.matthiasfisch.audiodragon.recognition.TrackRecognitionPostprocessor
 import de.matthiasfisch.audiodragon.recognition.TrackRecognizer
+import de.matthiasfisch.audiodragon.util.ApiConfig
 import de.matthiasfisch.audiodragon.util.readTextAtPath
 import de.matthiasfisch.audiodragon.util.readTextListAtPath
 import mu.KotlinLogging
+import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.util.*
@@ -24,6 +23,8 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 private val LOGGER = KotlinLogging.logger {}
+
+private const val DEFAULT_BASE_URL = "https://shazam.p.rapidapi.com"
 
 private val SHAZAM_FORMAT = AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 44100f, 16, 1, 2, 44100f, false)
 private const val SHAZAM_SAMPLE_SIZE_LIMIT = 500 * 1024
@@ -44,13 +45,13 @@ open class RapidApiShazamTrackRecognizer(
     delayUntilRecognition: Duration,
     sampleDuration: Duration,
     maxRetriesForRecognition: Int,
-    postprocessors: List<TrackRecognitionPostprocessor>
+    postprocessors: List<TrackRecognitionPostprocessor>,
+    private val apiConfig: ApiConfig = ApiConfig.unconfigured()
 ) : TrackRecognizer(delayUntilRecognition, sampleDuration, maxRetriesForRecognition, postprocessors) {
-    private val httpClient = OkHttpClient()
+    private val httpClient: OkHttpClient = apiConfig.configure(OkHttpClient.Builder()).build()
     private val recognizerId = UUID.randomUUID()
 
     init {
-        httpClient.proxy
         require(apiKey.isNotBlank()) { "RapidAPI Shazam API key must not be blank." }
     }
 
@@ -123,11 +124,8 @@ open class RapidApiShazamTrackRecognizer(
         )
     }
 
-    protected fun shazamRecognitionEndpoint(totalSentDuration: Duration) = String.format(
-        "https://shazam.p.rapidapi.com/songs/v2/detect?timezone=Europe%%2FBerlin&locale=en-US&identifier=%s&samplems=%s",
-        recognizerId,
-        totalSentDuration.inWholeMilliseconds
-    )
+    private fun shazamRecognitionEndpoint(totalSentDuration: Duration) =
+        "${apiConfig.apiBaseUrlOverride ?: DEFAULT_BASE_URL}/songs/v2/detect?timezone=Europe%%2FBerlin&locale=en-US&identifier=$recognizerId&samplems=${totalSentDuration.inWholeMilliseconds}"
 
     private fun encodeSampleData(sample: PcmData, sourceFormat: AudioFormat): String {
         val pcmDataInShazamFormat = convertPcmDataToShazamFormat(sample, sourceFormat)

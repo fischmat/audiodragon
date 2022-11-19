@@ -94,7 +94,8 @@ class CaptureService(val settingsService: SettingsService, val captureEventBroke
                 recognition.secondsUntilRecognition.seconds,
                 recognition.sampleSeconds.seconds,
                 recognition.maxRetries,
-                additionalProcessors
+                additionalProcessors,
+                recognition.apiConfig()
             )
 
             else -> throw IllegalStateException("Unknown recognition type ${recognition.javaClass.simpleName}")
@@ -106,7 +107,7 @@ class CaptureService(val settingsService: SettingsService, val captureEventBroke
             is MusicBrainzPostprocessorConfig -> MusicBrainzTrackDataLoader(
                 config.minScore,
                 config.preferInput,
-                config.userAgent
+                config.apiConfig()
             )
             else -> throw IllegalArgumentException("Unknown postprocessor type.")
         }
