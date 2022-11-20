@@ -78,6 +78,11 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("io.kotest:kotest-runner-junit5:5.5.4")
 	testImplementation("io.mockk:mockk:1.13.2")
+
+	// CVE mitigation
+	implementation("org.yaml:snakeyaml:1.33") {
+		because("CVE-2022-38751")
+	}
 }
 
 tasks.withType<Test>().configureEach {
