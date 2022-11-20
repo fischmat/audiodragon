@@ -43,9 +43,23 @@ allprojects {
 }
 
 dependencies {
-	implementation(project(":api"))
+	implementation(project(":fft"))
+
+	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
+	implementation("org.springframework:spring-messaging")
+	implementation("org.springframework:spring-websocket")
+
+	implementation("io.reactivex.rxjava2:rxkotlin:2.4.0")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+	implementation("com.squareup.okhttp3:okhttp:4.10.0")
+	implementation("com.jayway.jsonpath:json-path:2.7.0")
+	implementation("net.jthink:jaudiotagger:3.0.1")
+	implementation("com.cloudburst:java-lame:3.98.4")
+	implementation("org.jooq:jooq:3.17.5")
+	implementation("org.flywaydb:flyway-core:9.8.1")
+	implementation("org.xerial:sqlite-jdbc:3.39.3.0")
+
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation("io.github.microutils:kotlin-logging-jvm:3.0.4")
@@ -53,6 +67,7 @@ dependencies {
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("io.kotest:kotest-runner-junit5:5.5.4")
+	testImplementation("io.mockk:mockk:1.13.2")
 }
 
 tasks.withType<Test>().configureEach {
