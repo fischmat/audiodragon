@@ -11,6 +11,7 @@ plugins {
 	kotlin("jvm") version "1.6.21"
 	kotlin("plugin.spring") version "1.6.21"
 	id("com.github.jk1.dependency-license-report") version "2.0"
+	id("org.owasp.dependencycheck") version "7.3.2" apply false
 }
 
 java.sourceCompatibility = JavaVersion.VERSION_17
@@ -40,6 +41,8 @@ allprojects {
 			jvmTarget = "17"
 		}
 	}
+
+	apply(plugin = "org.owasp.dependencycheck")
 }
 
 dependencies {
@@ -99,4 +102,8 @@ licenseReport {
 	filters = arrayOf<DependencyFilter>(LicenseBundleNormalizer())
 	excludeBoms = true
 	allowedLicensesFile = File("$projectDir/config/allowed-licenses.json")
+}
+
+configure<org.owasp.dependencycheck.gradle.extension.DependencyCheckExtension> {
+	format = org.owasp.dependencycheck.reporting.ReportGenerator.Format.ALL
 }
