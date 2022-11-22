@@ -19,7 +19,7 @@ jobs:
       - run: java -version
       - run: cd ${{ github.workspace }}
       - run: ./gradlew test
-  create-snapshot:
+  create-release:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
