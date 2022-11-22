@@ -24,7 +24,7 @@ configurations {
 
 allprojects {
 	group = "de.matthiasfisch"
-	version = "0.0.1-SNAPSHOT"
+	version = "0.1.0-alpha"
 
 	repositories {
 		mavenCentral()
