@@ -21,6 +21,7 @@ jobs:
       - run: ./gradlew test
   create-release:
     runs-on: ubuntu-latest
+    needs: test
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
