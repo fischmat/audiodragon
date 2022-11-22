@@ -1,5 +1,5 @@
 name: Audiodragon Release Pipeline
-run-name: Release ${{ github.ref }}
+run-name: Release ${{ github.ref_name }}
 on:
   push:
     # Sequence of patterns matched against refs/tags
@@ -39,6 +39,12 @@ jobs:
           PROJECT_NAME=$(./gradlew properties -q | grep "^name:" | awk '{print $2}')
           PROJECT_VERSION=$(./gradlew properties -q | grep "^version:" | awk '{print $2}')
           cp build/libs/$PROJECT_NAME-$PROJECT_VERSION.jar audiodragon-${{ github.ref_name }}.jar
+      - name: Update CHANGELOG
+        id: changelog
+        uses: requarks/changelog-action@v1
+        with:
+          token: ${{ github.token }}
+          tag: ${{ github.ref_name }}
       - name: Create release
         id: create_release
         uses: actions/create-release@v1
@@ -47,8 +53,7 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
-          body: |
-            This is a development build.
+          body: ${{ steps.changelog.outputs.changes }}
           draft: false
           prerelease: false
       - name: Upload Release Artifact
