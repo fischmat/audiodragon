@@ -4,7 +4,7 @@ on:
   push:
     # Sequence of patterns matched against refs/tags
     tags:
-      - 'release/*'
+      - 'v*'
 jobs:
   create-snapshot:
     runs-on: ubuntu-latest
@@ -32,7 +32,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: Release ${{ $PROJECT_VERSION }}
-          body: Release ${{ $PROJECT_VERSION }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            This is a development build.
           draft: false
           prerelease: false
