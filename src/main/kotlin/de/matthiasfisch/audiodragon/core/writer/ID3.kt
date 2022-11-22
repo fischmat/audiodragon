@@ -6,9 +6,11 @@ import okhttp3.Request
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.audio.mp3.MP3File
 import org.jaudiotagger.tag.FieldKey
+import org.jaudiotagger.tag.TagField
+import org.jaudiotagger.tag.datatype.DataTypes
+import org.jaudiotagger.tag.id3.ID3v24Frame
+import org.jaudiotagger.tag.id3.ID3v24Frames
 import org.jaudiotagger.tag.id3.ID3v24Tag
-import org.jaudiotagger.tag.images.Artwork
-import org.jaudiotagger.tag.images.StandardArtwork
 import java.awt.Image
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
@@ -24,6 +26,10 @@ typealias ArtworkUrlLoader = (URL) -> InputStream
 
 private const val PNG_IMAGEIO_ID = "png"
 private const val PNG_MIME_TYPE = "image/png"
+
+// IDs for picture types (see org.jaudiotagger.tag.reference.PictureTypes)
+private const val COVERART_FRONT_ID = 3
+private const val COVERART_BACK_ID = 4
 
 fun addID3TagToMP3File(path: Path, trackData: TrackData, artworkLoader: ArtworkUrlLoader = defaultArtworkLoader(), artworkDimension: Int = 500) {
     val file = path.toFile()
@@ -52,25 +58,26 @@ private fun getID3Tag(trackData: TrackData, artworkLoader: ArtworkUrlLoader, art
         genres?.apply { id3.setField(FieldKey.GENRE, *this.toTypedArray()) }
         releaseYear?.apply { id3.setField(FieldKey.YEAR, this) }
         lyrics?.apply { id3.setField(FieldKey.LYRICS, this.joinToString("\n")) }
-        coverartImageUrl?.apply { id3.setField(loadArtwork(this, artworkDimensions, artworkLoader)) }
-        backgroundImageUrl?.apply { id3.setField(loadArtwork(this, artworkDimensions, artworkLoader)) }
+        coverartImageUrl?.apply { id3.addField(loadArtwork(this, COVERART_FRONT_ID, artworkDimensions, artworkLoader)) }
+        backgroundImageUrl?.apply { id3.addField(loadArtwork(this, COVERART_BACK_ID, artworkDimensions, artworkLoader)) }
     }
     return id3
 }
 
-private fun loadArtwork(url: String, artworkDimensions: Int, artworkLoader: ArtworkUrlLoader): Artwork {
+private fun loadArtwork(url: String, typeId: Int, artworkDimensions: Int, artworkLoader: ArtworkUrlLoader): TagField {
     return artworkLoader(URL(url)).use {
         val originalImage = ImageIO.read(it)
         checkNotNull(originalImage) { "No image reader is available for the file type of $url." }
         val scaledImage = scaleImage(originalImage, artworkDimensions)
 
-        StandardArtwork().apply {
-            binaryData = exportImage(scaledImage)
-            imageUrl = url
-            width = scaledImage.width
-            height = scaledImage.height
-            mimeType = PNG_MIME_TYPE
-        }
+        val id3v24Key = ID3v24Frames.getInstanceOf().getId3KeyFromGenericKey(FieldKey.COVER_ART)
+        val frame = ID3v24Frame(id3v24Key.frameId)
+        frame.body.setObjectValue(DataTypes.OBJ_PICTURE_DATA, exportImage(scaledImage))
+        frame.body.setObjectValue(DataTypes.OBJ_PICTURE_TYPE, typeId)
+        frame.body.setObjectValue(DataTypes.OBJ_MIME_TYPE, PNG_MIME_TYPE)
+        frame.body.setObjectValue(DataTypes.OBJ_DESCRIPTION, "")
+        frame.body.setObjectValue(DataTypes.OBJ_URL, url)
+        frame
     }
 }
 
