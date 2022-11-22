@@ -12,7 +12,8 @@ import de.matthiasfisch.audiodragon.core.splitting.TrackBoundsDetector
 import de.matthiasfisch.audiodragon.core.writer.MP3FileWriter
 import de.matthiasfisch.audiodragon.exception.CaptureOngoingException
 import de.matthiasfisch.audiodragon.exception.NoCaptureOngoingException
-import de.matthiasfisch.audiodragon.types.*
+import de.matthiasfisch.audiodragon.types.FileOutputOptionsDTO
+import de.matthiasfisch.audiodragon.types.MP3OptionsDTO
 import de.matthiasfisch.audiodragon.types.settings.*
 import de.matthiasfisch.audiodragon.util.AudioSourceId
 import de.matthiasfisch.audiodragon.util.getId
@@ -63,7 +64,9 @@ class CaptureService(val settingsService: SettingsService, val captureEventBroke
 
     fun stopCaptureAfterCurrentTrack(audioSource: AudioSource) = synchronized(ongoingCaptures) {
         val capture = ongoingCaptures[audioSource.getId()] ?: throw NoCaptureOngoingException(audioSource)
-        capture.stopAfterTrack()
+        capture.stopAfterTrack().thenRun {
+            ongoingCaptures.remove(audioSource.getId())
+        }
         LOGGER.info { "Capture on audio device ${audioSource.name} will be stopped after current track." }
     }
 

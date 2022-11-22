@@ -11,6 +11,7 @@ import io.reactivex.Flowable
 import io.reactivex.processors.PublishProcessor
 import mu.KotlinLogging
 import java.nio.file.Path
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.locks.ReentrantLock
 import javax.sound.sampled.AudioFormat
 import kotlin.concurrent.withLock
@@ -45,6 +46,7 @@ class Capture private constructor(
     private var trackData: TrackData? = null
     private val trackDataLock = ReentrantLock()
     private var stopRequested = false
+    private val stopFuture = CompletableFuture<Unit>()
 
     // Publishers
     private val trackStartedPublisher = PublishProcessor.create<Unit>()
@@ -76,13 +78,17 @@ class Capture private constructor(
         recording.stopRecording().thenApply {  audio ->
             audio.close()
         }
+        stopFuture.complete(Unit)
         captureStoppedPublisher.onNext(Unit)
         LOGGER.debug { "Capture on audio device ${audioSource.name} stopped." }
     }
 
-    fun stopAfterTrack() {
+    fun stopAfterTrack(): CompletableFuture<Unit> {
         stopRequested = true
         captureStopRequestedPublisher.onNext(Unit)
+        return CompletableFuture<Unit>().also {
+            stopFuture.thenRun { it.complete(Unit) }
+        }
     }
 
     fun currentTrack() = trackData
