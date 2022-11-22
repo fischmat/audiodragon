@@ -38,7 +38,7 @@ jobs:
       - run: |
           PROJECT_NAME=$(./gradlew properties -q | grep "^name:" | awk '{print $2}')
           PROJECT_VERSION=$(./gradlew properties -q | grep "^version:" | awk '{print $2}')
-          cp build/libs/$PROJECT_NAME-$PROJECT_VERSION.jar audiodragon-${{ github.ref }}.jar
+          cp build/libs/$PROJECT_NAME-$PROJECT_VERSION.jar audiodragon-${{ github.ref_name }}.jar
       - name: Create release
         id: create_release
         uses: actions/create-release@v1
@@ -58,6 +58,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./audiodragon-${{ github.ref }}.jar
-          asset_name: audiodragon-${{ github.ref }}.jar
+          asset_path: ./audiodragon-${{ github.ref_name }}.jar
+          asset_name: audiodragon-${{ github.ref_name }}.jar
           asset_content_type: application/java-archive
