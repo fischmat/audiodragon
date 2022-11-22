@@ -127,7 +127,7 @@ open class RapidApiShazamTrackRecognizer(
     }
 
     private fun shazamRecognitionEndpoint(totalSentDuration: Duration) =
-        "${apiConfig.apiBaseUrlOverride ?: DEFAULT_BASE_URL}/songs/v2/detect?timezone=Europe%%2FBerlin&locale=en-US&identifier=$recognizerId&samplems=${totalSentDuration.inWholeMilliseconds}"
+        "${apiConfig.apiBaseUrlOverride ?: DEFAULT_BASE_URL}/songs/v2/detect?timezone=Europe%2FBerlin&locale=en-US&identifier=$recognizerId&samplems=${totalSentDuration.inWholeMilliseconds}"
 
     private fun encodeSampleData(sample: PcmData, sourceFormat: AudioFormat): String {
         val pcmDataInShazamFormat = convertPcmDataToShazamFormat(sample, sourceFormat)
