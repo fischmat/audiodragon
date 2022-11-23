@@ -1,21 +1,18 @@
 package de.matthiasfisch.audiodragon.service
 
 import de.matthiasfisch.audiodragon.exception.NotFoundException
-import de.matthiasfisch.audiodragon.library.DirectoryWatcher
-import de.matthiasfisch.audiodragon.library.LibraryException
 import de.matthiasfisch.audiodragon.library.LibraryScanner
+import de.matthiasfisch.audiodragon.library.LibraryWatcher
+import de.matthiasfisch.audiodragon.library.peristence.LibraryItem
 import de.matthiasfisch.audiodragon.library.peristence.LibraryItemSortField
 import de.matthiasfisch.audiodragon.library.peristence.LibraryRepository
 import de.matthiasfisch.audiodragon.library.peristence.SortOrder
-import de.matthiasfisch.audiodragon.library.watchDirectory
+import de.matthiasfisch.audiodragon.library.watchLibraryDirectory
 import de.matthiasfisch.audiodragon.types.LibraryItemDTO
-import de.matthiasfisch.audiodragon.types.TrackWrittenEventDTO
 import mu.KotlinLogging
-import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
 import java.io.OutputStream
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import javax.imageio.ImageIO
@@ -38,7 +35,7 @@ class LibraryService(private val libraryEventBroker: LibraryEventBroker, private
         CompletableFuture.supplyAsync {
             reinitializeLibrary()
         }.thenRun {
-            watchLibrary() // TODO: Fix watcher
+            watchLibrary()
         }
     }
 
@@ -80,17 +77,6 @@ class LibraryService(private val libraryEventBroker: LibraryEventBroker, private
         ImageIO.write(item.backCoverart.value, formatName, out)
     }
 
-    @EventListener
-    fun onTrackWritten(event: TrackWrittenEventDTO) {
-        try {
-            val item = LibraryScanner.scanFile(Paths.get(event.path))
-            libraryPersistence.upsertItem(item)
-            libraryEventBroker.sendLibraryRefreshed()
-        } catch (e: LibraryException) {
-            LOGGER.info { "Could not update library with written track ${event.path}: ${e.message}" }
-        }
-    }
-
     private fun reinitializeLibrary() {
         val libraryPath = settingsService.settings.output.path
         libraryPath.createDirectories() // Create directory with parent if not exists
@@ -107,15 +93,15 @@ class LibraryService(private val libraryEventBroker: LibraryEventBroker, private
     }
 
     private fun watchLibrary() {
-        val libraryWatcher = object : DirectoryWatcher {
-            override fun handleChange(createdPaths: List<Path>, modifiedPaths: List<Path>, deletedPaths: List<Path>) {
-                LOGGER.info { "Recognized change in watched directory. Adding ${createdPaths.size}, updating ${modifiedPaths.size} and deleting ${deletedPaths.size} items." }
-                createdPaths.map { LibraryScanner.scanFile(it) }.forEach { libraryPersistence.upsertItem(it) }
-                modifiedPaths.map { LibraryScanner.scanFile(it) }.forEach { libraryPersistence.upsertItem(it) }
+        val libraryWatcher = object : LibraryWatcher {
+            override fun handleChange(createdItems: List<LibraryItem>, modifiedItems: List<LibraryItem>, deletedPaths: List<Path>) {
+                LOGGER.info { "Recognized change in library. Adding ${createdItems.size}, updating ${modifiedItems.size} and deleting ${deletedPaths.size} items." }
+                createdItems.forEach { libraryPersistence.upsertItem(it) }
+                modifiedItems.forEach { libraryPersistence.upsertItem(it) }
                 deletedPaths.forEach { libraryPersistence.deleteItem(it) }
                 libraryEventBroker.sendLibraryRefreshed()
             }
         }
-        watchDirectory(settingsService.settings.output.path, executor = libraryScanExecutor, callback = libraryWatcher)
+        watchLibraryDirectory(settingsService.settings.output.path, executor = libraryScanExecutor, callback = libraryWatcher)
     }
 }

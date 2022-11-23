@@ -5,7 +5,7 @@ import de.matthiasfisch.audiodragon.types.LibraryRefreshedEvent
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
 
-const val LIBRARY_EVENTS_TOPIC = "/de/matthiasfisch/audiodragon/library"
+const val LIBRARY_EVENTS_TOPIC = "/library"
 
 @Service
 class LibraryEventBroker(val template: SimpMessagingTemplate) {

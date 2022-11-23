@@ -7,7 +7,6 @@ import de.matthiasfisch.audiodragon.core.model.FrequencyAccumulator
 import de.matthiasfisch.audiodragon.core.model.getRMS
 import de.matthiasfisch.audiodragon.types.*
 import io.reactivex.disposables.Disposable
-import org.springframework.context.ApplicationEventPublisher
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
 import kotlin.io.path.absolutePathString
@@ -17,7 +16,7 @@ const val METRICS_EVENTS_TOPIC = "/metrics"
 private const val FFT_CHUNKS = 32
 
 @Service
-class CaptureEventBroker(val template: SimpMessagingTemplate, val applicationEventPublisher: ApplicationEventPublisher) {
+class CaptureEventBroker(val template: SimpMessagingTemplate) {
     private val subscriptions = mutableMapOf<Capture, List<Disposable>>()
 
     fun monitor(capture: Capture) {
@@ -94,7 +93,6 @@ class CaptureEventBroker(val template: SimpMessagingTemplate, val applicationEve
     }
 
     private fun publishEvent(event: EventDTO) {
-        applicationEventPublisher.publishEvent(event)
         template.convertAndSend(
             CAPTURE_EVENTS_TOPIC, event
         )

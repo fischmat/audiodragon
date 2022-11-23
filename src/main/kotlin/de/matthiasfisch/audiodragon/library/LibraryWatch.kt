@@ -1,49 +1,62 @@
 package de.matthiasfisch.audiodragon.library
 
+import de.matthiasfisch.audiodragon.library.peristence.LibraryItem
 import java.nio.file.Path
-import java.nio.file.StandardWatchEventKinds
+import java.nio.file.StandardWatchEventKinds.*
+import java.nio.file.WatchEvent
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
-fun watchDirectory(path: Path, executor: Executor = ForkJoinPool.commonPool(), callback: DirectoryWatcher): AutoCloseable {
+fun watchLibraryDirectory(
+    path: Path,
+    executor: Executor = ForkJoinPool.commonPool(),
+    callback: LibraryWatcher
+): AutoCloseable {
     require(path.toFile().isDirectory) { "Only directories can be watched, but $path is not a directory." }
     val watchService = path.fileSystem.newWatchService()
 
-    path.register(watchService, StandardWatchEventKinds.ENTRY_CREATE)
-    path.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY)
-    path.register(watchService, StandardWatchEventKinds.ENTRY_DELETE)
+    path.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE)
 
-    val scheduledAction = Runnable {
-        val watch = watchService.poll() ?: return@Runnable
+    val stop = AtomicBoolean(false)
+    val scheduler = Executors.newSingleThreadExecutor()
+    scheduler.execute {
+        while (!stop.get()) {
+            val watch = watchService.take()
+            try {
+                val events = watch.pollEvents()
+                val pathsCreated = getPathEvents(events, ENTRY_CREATE, path)
+                val pathsModified = getPathEvents(events, ENTRY_MODIFY, path)
+                val pathsDeleted = getPathEvents(events, ENTRY_DELETE, path)
 
-        val events = watch.pollEvents()
-        val pathsCreated = events.filter { it.kind() == StandardWatchEventKinds.ENTRY_CREATE }
-            .map { it.context() }
-            .filterIsInstance(Path::class.java)
-        val pathsModified = events.filter { it.kind() == StandardWatchEventKinds.ENTRY_MODIFY }
-            .map { it.context() }
-            .filterIsInstance(Path::class.java)
-        val pathsDeleted = events.filter { it.kind() == StandardWatchEventKinds.ENTRY_DELETE }
-            .map { it.context() }
-            .filterIsInstance(Path::class.java)
+                val createdItems = pathsCreated.mapNotNull { runCatching { LibraryScanner.scanFile(it) }.getOrNull() }
+                val modifiedItems = pathsModified.mapNotNull { runCatching { LibraryScanner.scanFile(it) }.getOrNull() }
 
-        if (pathsCreated.isNotEmpty() || pathsModified.isNotEmpty() || pathsDeleted.isNotEmpty()) {
-            executor.execute { callback.handleChange(pathsCreated, pathsModified, pathsDeleted) }
+                if (createdItems.isNotEmpty() || modifiedItems.isNotEmpty() || pathsDeleted.isNotEmpty()) {
+                    executor.execute { callback.handleChange(createdItems, modifiedItems, pathsDeleted) }
+                }
+            } finally {
+                watch.reset()
+            }
         }
     }
 
-    val scheduler = Executors.newSingleThreadScheduledExecutor()
-    scheduler.scheduleAtFixedRate(scheduledAction, 0, 1, TimeUnit.SECONDS)
-
     return AutoCloseable {
-        watchService.close()
+        stop.set(true)
         scheduler.awaitTermination(5, TimeUnit.SECONDS)
+        watchService.close()
         scheduler.shutdownNow()
     }
 }
 
-interface DirectoryWatcher {
-    fun handleChange(createdPaths: List<Path>, modifiedPaths: List<Path>, deletedPaths: List<Path>)
+private fun getPathEvents(events: List<WatchEvent<*>>, kind: WatchEvent.Kind<Path>, rootPath: Path): List<Path> =
+    events.filter { it.kind() == kind }
+        .map { it.context() }
+        .filterIsInstance(Path::class.java)
+        .map { rootPath.resolve(it) }
+
+interface LibraryWatcher {
+    fun handleChange(createdItems: List<LibraryItem>, modifiedItems: List<LibraryItem>, deletedPaths: List<Path>)
 }
