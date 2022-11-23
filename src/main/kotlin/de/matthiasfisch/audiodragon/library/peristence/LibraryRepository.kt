@@ -133,39 +133,9 @@ class LibraryRepository(dbFilePath: Path) {
     fun replaceAllItems(items: List<LibraryItem>) = txn { ctx ->
         DSL.using(ctx)
             .deleteFrom(LIBRARY_ITEMS_TABLE)
-            .where(DSL.trueCondition())
-
-        val insertRows = items.map {
-            DSL.row(
-                it.filePath.absolutePathString(),
-                Timestamp(it.addedAt?.toEpochMilli() ?: it.filePath.toFile().lastModified()),
-                Timestamp(it.updatedAt?.toEpochMilli() ?: it.filePath.toFile().lastModified()),
-                it.title,
-                it.artist,
-                it.album,
-                it.releaseYear,
-                it.frontCoverart.value?.let { img -> imageBytes(img) },
-                it.backCoverart.value?.let { img -> imageBytes(img) },
-                it.lyrics?.joinToString("\n"),
-                it.length?.inWholeMilliseconds?.toInt()
-            )
-        }
-        DSL.using(ctx)
-            .insertInto(LIBRARY_ITEMS_TABLE)
-            .columns(
-                LIBITEM_FILE_PATH_FIELD,
-                LIBITEM_ADDED_AT_FIELD,
-                LIBITEM_UPDATED_AT_FIELD,
-                LIBITEM_TITLE_FIELD,
-                LIBITEM_ARTIST_FIELD,
-                LIBITEM_ALBUM_FIELD,
-                LIBITEM_RELEASE_YEAR_FIELD,
-                LIBITEM_FRONT_COVER_FIELD,
-                LIBITEM_BACK_COVER_FIELD,
-                LIBITEM_LYRICS_FIELD,
-                LIBITEM_LENGTH_FIELD
-            )
-            .valuesOfRows(insertRows)
+            .where(DSL.trueCondition().isTrue)
+            .execute()
+        items.forEach { upsertItem(ctx, it) }
     }
 
     fun deleteItem(filePath: Path) = txn { ctx ->
