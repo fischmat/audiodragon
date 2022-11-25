@@ -3,7 +3,6 @@ package de.matthiasfisch.audiodragon.service
 import de.matthiasfisch.audiodragon.core.buffer.DiskSpillingAudioBuffer
 import de.matthiasfisch.audiodragon.core.buffer.InMemoryAudioBuffer
 import de.matthiasfisch.audiodragon.core.capture.Capture
-import de.matthiasfisch.audiodragon.core.capture.Capture.Companion.capture
 import de.matthiasfisch.audiodragon.core.model.AudioSource
 import de.matthiasfisch.audiodragon.core.recognition.TrackRecognitionPostprocessor
 import de.matthiasfisch.audiodragon.core.recognition.musicbrainz.MusicBrainzTrackDataLoader
@@ -39,8 +38,7 @@ class CaptureService(val settingsService: SettingsService, val captureEventBroke
             throw CaptureOngoingException(audioSource)
         }
 
-        val capture = audioSource.capture(
-            audioFormat = audioFormat,
+        val capture = Capture(
             recording = createRecording(audioSource, audioFormat),
             trackBoundsDetector = getTrackBoundsDetector(),
             trackRecognizer = if (recognizeSongs) getTrackRecognizer() else null,

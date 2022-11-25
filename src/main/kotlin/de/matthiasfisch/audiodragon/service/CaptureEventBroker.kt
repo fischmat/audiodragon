@@ -22,26 +22,26 @@ class CaptureEventBroker(val template: SimpMessagingTemplate) {
     fun monitor(capture: Capture) {
         val captureDTO = CaptureDTO(capture)
         subscriptions[capture] = listOf(
-            capture.captureStartedEvents().subscribe {
+            capture.events.captureStartedEvents().subscribe {
                 publishEvent(CaptureStartedEventDTO(captureDTO))
             },
-            capture.captureStoppedEvents().subscribe {
+            capture.events.captureStoppedEvents().subscribe {
                 publishEvent(CaptureEndedEventDTO(captureDTO))
                 disposeCaptureSubscriptions(capture)
             },
-            capture.captureStopRequestedEvents().subscribe {
+            capture.events.captureStopRequestedEvents().subscribe {
                 publishEvent(CaptureEndRequestedEventDTO(captureDTO))
             },
-            capture.trackStartEvents().subscribe {
+            capture.events.trackStartEvents().subscribe {
                 publishEvent(TrackStartedEventDTO(captureDTO))
             },
-            capture.trackEndedEvents().subscribe {
+            capture.events.trackEndedEvents().subscribe {
                 publishEvent(TrackEndedEventDTO(captureDTO))
             },
-            capture.trackRecognizedEvents().subscribe {
+            capture.events.trackRecognizedEvents().subscribe {
                 publishEvent(TrackRecognitionEventDTO(captureDTO, it))
             },
-            capture.trackWrittenEvents().subscribe {
+            capture.events.trackWrittenEvents().subscribe {
                 publishEvent(TrackWrittenEventDTO(captureDTO, it.absolutePathString()))
             },
             publishMetrics(capture)
@@ -56,9 +56,9 @@ class CaptureEventBroker(val template: SimpMessagingTemplate) {
 
     private fun publishMetrics(capture: Capture): Disposable {
 
-        val frequencyAccumulator = FrequencyAccumulator(capture.audioFormat, FFT_CHUNKS)
+        val frequencyAccumulator = FrequencyAccumulator(capture.recording.audioFormat, FFT_CHUNKS)
 
-        return capture.audioChunksFlowable().subscribe { audioChunk ->
+        return capture.recording.audioChunkFlowable().subscribe { audioChunk ->
             val bufferStats = getBufferStats(capture)
 
             frequencyAccumulator.accumulate(audioChunk.pcmData)

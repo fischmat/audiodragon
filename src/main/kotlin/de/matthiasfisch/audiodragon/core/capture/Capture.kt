@@ -1,112 +1,105 @@
 package de.matthiasfisch.audiodragon.core.capture
 
-import de.matthiasfisch.audiodragon.core.model.AudioSource
 import de.matthiasfisch.audiodragon.core.model.Recording
 import de.matthiasfisch.audiodragon.core.model.TrackData
 import de.matthiasfisch.audiodragon.core.recognition.TrackRecognizer
 import de.matthiasfisch.audiodragon.core.splitting.TrackBoundsDetector
 import de.matthiasfisch.audiodragon.core.splitting.TrackState
 import de.matthiasfisch.audiodragon.core.writer.AudioFileWriter
-import io.reactivex.Flowable
-import io.reactivex.processors.PublishProcessor
 import mu.KotlinLogging
-import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.locks.ReentrantLock
-import javax.sound.sampled.AudioFormat
 import kotlin.concurrent.withLock
 
 private val LOGGER = KotlinLogging.logger {}
 
-class Capture private constructor(
-    val audioSource: AudioSource,
-    val audioFormat: AudioFormat,
-    private val recording: Recording<*>,
+/**
+ * The capture is the central controlling unit for splitting, recognizing and writing tracks.
+ * It wraps a [Recording] and controls its buffer making sure that its content is written and cleared after every track.
+ */
+class Capture constructor(
+    val recording: Recording<*>,
     private val trackBoundsDetector: TrackBoundsDetector,
     private val trackRecognizer: TrackRecognizer?,
     private val fileWriter: AudioFileWriter
 ) {
-    companion object {
-        fun AudioSource.capture(
-            audioFormat: AudioFormat,
-            recording: Recording<*>,
-            trackBoundsDetector: TrackBoundsDetector,
-            trackRecognizer: TrackRecognizer?,
-            fileWriter: AudioFileWriter
-        ) = Capture(
-            this,
-            audioFormat,
-            recording,
-            trackBoundsDetector,
-            trackRecognizer,
-            fileWriter
-        )
-    }
 
     private var trackData: TrackData? = null
     private val trackDataLock = ReentrantLock()
+
     private var stopRequested = false
     private val stopFuture = CompletableFuture<Unit>()
 
-    // Publishers
-    private val trackStartedPublisher = PublishProcessor.create<Unit>()
-    private val trackEndedPublisher = PublishProcessor.create<Unit>()
-    private val trackRecognizedPublisher = PublishProcessor.create<TrackData>()
-    private val trackWrittenPublisher = PublishProcessor.create<Path>()
-    private val captureStartedPublisher = PublishProcessor.create<Unit>()
-    private val captureStoppedPublisher = PublishProcessor.create<Unit>()
-    private val captureStopRequestedPublisher = PublishProcessor.create<Unit>()
+    /**
+     * Wrapper for event flowables that can be subscribed for capture events.
+     */
+    val events = CaptureEvents()
 
     init {
+        // Pass every audio chunk to the track detector and call respective actions if bounds are detected
         recording.audioChunkFlowable()
             .subscribe {
                 when (trackBoundsDetector.process(it)) {
                     TrackState.TRACK_STARTED -> onTrackStarted()
                     TrackState.TRACK_ENDED -> onTrackEnded()
-                    TrackState.SILENCE -> {}
-                    TrackState.PLAYING -> {}
+                    else -> {}
                 }
             }
     }
 
+    /**
+     * @return Returns the metadata on the current track if it was already set or null otherwise.
+     */
+    fun currentTrack() = trackData
+
+    /**
+     * Starts the capture and the underlying [recording].
+     */
     fun start() {
         recording.startRecording()
-        captureStartedPublisher.onNext(Unit)
+        events.captureStarted()
     }
 
+    /**
+     * Stops the capture immediately. This also stops the underlying [recording].
+     */
     fun stop() {
         recording.stopRecording().thenApply {  audio ->
             audio.close()
         }
         stopFuture.complete(Unit)
-        captureStoppedPublisher.onNext(Unit)
-        LOGGER.debug { "Capture on audio device ${audioSource.name} stopped." }
+        events.captureStopped()
+        LOGGER.debug { "Capture on audio device ${recording.audioSource.name} stopped." }
     }
 
+    /**
+     * Requests the capture to stop on the next observed track boundary.
+     * @return Returns a future that will complete once the capture is stopped.
+     */
     fun stopAfterTrack(): CompletableFuture<Unit> {
         stopRequested = true
-        captureStopRequestedPublisher.onNext(Unit)
+        events.captureStopRequested()
         return CompletableFuture<Unit>().also {
             stopFuture.thenRun { it.complete(Unit) }
         }
     }
 
-    fun currentTrack() = trackData
-
-    fun audio() = recording.getAudio()
-
+    /**
+     * Merges the existing track data with the provided track data overwriting any fields if they are set in [trackDataToMerge].
+     * @return Returns the new track data.
+     */
     fun mergeTrackData(trackDataToMerge: TrackData) = trackDataLock.withLock {
         trackData = if (trackData == null) trackDataToMerge else trackData!!.merge(trackDataToMerge)
         trackData!!
     }
 
     private fun onTrackStarted() {
-        trackStartedPublisher.onNext(Unit)
+        events.trackStarted()
 
         trackRecognizer?.recognizeTrack { recording.getAudio() }
             ?.thenAccept { trackData ->
                 trackData?.let {
-                    trackRecognizedPublisher.onNext(it)
+                    events.trackRecognized(trackData)
                     mergeTrackData(it)
                 }
             }
@@ -116,7 +109,7 @@ class Capture private constructor(
     }
 
     private fun onTrackEnded() {
-        trackEndedPublisher.onNext(Unit)
+        events.trackEnded()
 
         val audio = recording.reset()
         val trackData = this.trackData
@@ -124,20 +117,10 @@ class Capture private constructor(
             this.trackData = null
         }
         fileWriter.writeToFileAsync(audio, trackData)
-            .thenAccept { trackWrittenPublisher.onNext(it) }
+            .thenAccept { events.trackWritten(it) }
 
         if (stopRequested) {
             stop()
         }
     }
-
-    // Event flowables
-    fun trackStartEvents() = Flowable.fromPublisher(trackStartedPublisher)
-    fun trackEndedEvents() = Flowable.fromPublisher(trackEndedPublisher)
-    fun trackRecognizedEvents() = Flowable.fromPublisher(trackRecognizedPublisher)
-    fun trackWrittenEvents() = Flowable.fromPublisher(trackWrittenPublisher)
-    fun captureStartedEvents() = Flowable.fromPublisher(captureStartedPublisher)
-    fun captureStoppedEvents() = Flowable.fromPublisher(captureStoppedPublisher)
-    fun captureStopRequestedEvents() = Flowable.fromPublisher(captureStopRequestedPublisher)
-    fun audioChunksFlowable() = recording.audioChunkFlowable()
 }

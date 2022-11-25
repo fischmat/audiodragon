@@ -10,8 +10,8 @@ data class CaptureDTO(
     val audioFormat: AudioFormatDTO
 ) {
     constructor(capture: Capture): this(
-        AudioSourceDTO(capture.audioSource),
-        AudioFormatDTO(capture.audioFormat)
+        AudioSourceDTO(capture.recording.audioSource),
+        AudioFormatDTO(capture.recording.audioFormat)
     )
 }
 
