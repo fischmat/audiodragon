@@ -67,7 +67,7 @@ class CaptureEventBroker(val template: SimpMessagingTemplate) {
             template.convertAndSend(
                 METRICS_EVENTS_TOPIC, AudioMetricsEventDTO(
                     audioChunk.pcmData.getRMS(audioChunk.audioFormat),
-                    capture.audio().duration().inWholeMilliseconds,
+                    capture.recording.getAudio().duration().inWholeMilliseconds,
                     frequencies.slice(0..120),
                     bufferStats
                 )
@@ -76,19 +76,19 @@ class CaptureEventBroker(val template: SimpMessagingTemplate) {
     }
 
     private fun getBufferStats(capture: Capture): BufferStats {
-        return when (val buffer = capture.audio().backingBuffer()) {
+        return when (val buffer = capture.recording.getAudio().backingBuffer()) {
             is InMemoryAudioBuffer -> InMemoryBufferStats(
-                capture.audio().size(),
+                capture.recording.getAudio().size(),
                 Runtime.getRuntime().maxMemory()
             )
 
             is DiskSpillingAudioBuffer -> DiskSpillingBufferStats(
-                capture.audio().size(),
+                capture.recording.getAudio().size(),
                 Runtime.getRuntime().maxMemory(),
                 buffer.initiallyUsableDiskSpace
             )
 
-            else -> throw IllegalStateException("Unknown buffer type ${capture.audio().backingBuffer().javaClass}")
+            else -> throw IllegalStateException("Unknown buffer type ${capture.recording.getAudio().backingBuffer().javaClass}")
         }
     }
 
