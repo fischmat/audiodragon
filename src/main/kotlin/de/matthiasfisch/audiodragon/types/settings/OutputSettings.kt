@@ -6,7 +6,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-class OutputSettings(
+data class OutputSettings(
     val location: String,
     val encodingChunkLengthMs: Int,
     val coverartMaxDimension: Int
