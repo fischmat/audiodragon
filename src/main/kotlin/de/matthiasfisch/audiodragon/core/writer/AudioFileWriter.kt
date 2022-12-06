@@ -17,7 +17,7 @@ interface AudioFileWriter {
         CompletableFuture.supplyAsync({ writeToFile(audioBuffer, trackData) }, WRITING_THREAD_POOL)
 }
 
-private val ILLEGAL_FILENAME_CHARS = listOf('"', '*', ':', '<', '>', '?', '\\', '|', 0x7F.toChar(), '\u0000')
+private val ILLEGAL_FILENAME_CHARS = listOf('"', '*', ':', '<', '>', '?', '\\', '|', '/', 0x7F.toChar(), '\u0000')
 
 fun filenameFor(trackData: TrackData?, extension: String) = if (trackData?.title != null && trackData.artist != null) {
     sanitizeFilename("${trackData.artist} - ${trackData.title}.$extension")
