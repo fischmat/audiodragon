@@ -25,7 +25,11 @@ import kotlin.time.Duration.Companion.seconds
 private val LOGGER = KotlinLogging.logger {}
 
 @Service
-class CaptureService(val settingsService: SettingsService, val captureEventBroker: CaptureEventBroker, val audioPlatformService: AudioPlatformService) {
+class CaptureService(
+    val settingsService: SettingsService,
+    val captureEventBroker: CaptureEventBroker,
+    val audioPlatformService: AudioPlatformService
+) {
     private val ongoingCaptures = mutableMapOf<AudioSourceId, Capture>()
 
     fun startCapture(
@@ -68,6 +72,11 @@ class CaptureService(val settingsService: SettingsService, val captureEventBroke
         LOGGER.info { "Capture on audio device ${audioSource.name} will be stopped after current track." }
     }
 
+    fun cancelStopRequest(audioSourceId: AudioSourceId) = synchronized(ongoingCaptures) {
+        val capture = ongoingCaptures[audioSourceId] ?: throw NoCaptureOngoingException(audioPlatformService.getAudioSource(audioSourceId))
+        capture.cancelStop()
+    }
+
     private fun createRecording(audioSource: AudioSource, audioFormat: AudioFormat) = with(settingsService.settings) {
         val bufferFactory = getBufferFactory()
         val platform = audioPlatformService.getAudioPlatform()
@@ -75,9 +84,21 @@ class CaptureService(val settingsService: SettingsService, val captureEventBroke
     }
 
     private fun getBufferFactory() = with(settingsService.settings) {
-        when(val buffer = recording.buffer) {
-            is InMemoryBufferSettings -> { format: AudioFormat -> InMemoryAudioBuffer(format, buffer.initialBufferSize) }
-            is DiskSpillingBufferSettings -> { format: AudioFormat -> DiskSpillingAudioBuffer(format, buffer.inMemoryBufferMaxSize) }
+        when (val buffer = recording.buffer) {
+            is InMemoryBufferSettings -> { format: AudioFormat ->
+                InMemoryAudioBuffer(
+                    format,
+                    buffer.initialBufferSize
+                )
+            }
+
+            is DiskSpillingBufferSettings -> { format: AudioFormat ->
+                DiskSpillingAudioBuffer(
+                    format,
+                    buffer.inMemoryBufferMaxSize
+                )
+            }
+
             else -> throw IllegalArgumentException("Unknown buffer settings.")
         }
     }
@@ -103,12 +124,13 @@ class CaptureService(val settingsService: SettingsService, val captureEventBroke
     }
 
     private fun getRecognitionPostprocessor(config: RecognitionPostprocessorConfig): TrackRecognitionPostprocessor =
-        when(config) {
+        when (config) {
             is MusicBrainzPostprocessorConfig -> MusicBrainzTrackDataLoader(
                 config.minScore,
                 config.preferInput,
                 config.apiConfig()
             )
+
             else -> throw IllegalArgumentException("Unknown postprocessor type.")
         }
 

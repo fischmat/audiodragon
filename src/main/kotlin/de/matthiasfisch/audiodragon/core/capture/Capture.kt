@@ -85,6 +85,14 @@ class Capture constructor(
     }
 
     /**
+     * Cancels a previously scheduled stop of the capture.
+     */
+    fun cancelStop() {
+        stopFuture.cancel(false)
+        stopRequested = false
+    }
+
+    /**
      * Merges the existing track data with the provided track data overwriting any fields if they are set in [trackDataToMerge].
      * @return Returns the new track data.
      */

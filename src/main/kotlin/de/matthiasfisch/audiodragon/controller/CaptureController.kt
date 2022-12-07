@@ -44,6 +44,11 @@ class CaptureController(val captureService: CaptureService, val audioPlatformSer
         }
     }
 
+    @DeleteMapping("/{audioSourceId}/planned-stop")
+    fun cancelRecordingStop(@PathVariable("audioSourceId") audioSourceId: AudioSourceId) {
+        captureService.cancelStopRequest(audioSourceId)
+    }
+
     private fun getCaptureForId(audioSourceId: AudioSourceId) = captureService.getOngoingCapture(audioPlatformService.getAudioSource(audioSourceId))
         ?: throw NoCaptureOngoingException(
             audioPlatformService.getAudioSource(audioSourceId)
