@@ -1,0 +1,42 @@
+{
+  "recognition": {
+    "recognizer": "shazam",
+    "rapidApiToken": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "secondsUntilRecognition": 20,
+    "sampleSeconds": 5,
+    "maxRetries": 3,
+    "postprocessors": [
+      {
+        "type": "musicbrainz",
+        "minScore": 90,
+        "preferInput": true,
+        "apiBaseUrl": null,
+        "network": null
+      }
+    ],
+    "apiBaseUrl": null,
+    "network": null
+  },
+  "splitting": {
+    "splitAfterSilenceMillis": 350,
+    "silenceRmsTolerance": 0.0
+  },
+  "output": {
+    "location": "~/Music",
+    "encodingChunkLengthMs": 60000,
+    "coverartMaxDimension": 500
+  },
+  "recording": {
+    "platform": "java-audio",
+    "buffer": {
+      "type": "hybrid",
+      "batchSize": 2048,
+      "inMemoryBufferMaxSize": 134217728
+    }
+  },
+  "library": {
+    "dbPath": "~/.audiodragon.sqlite",
+    "scanThreads": -1
+  },
+  "settingsVersion": 1
+}
