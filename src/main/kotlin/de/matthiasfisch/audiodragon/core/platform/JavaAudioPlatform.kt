@@ -1,10 +1,6 @@
 package de.matthiasfisch.audiodragon.core.platform
 
-import de.matthiasfisch.audiodragon.core.buffer.AudioBuffer
-import de.matthiasfisch.audiodragon.core.model.AudioChunk
-import de.matthiasfisch.audiodragon.core.model.AudioPlatform
-import de.matthiasfisch.audiodragon.core.model.AudioSource
-import de.matthiasfisch.audiodragon.core.model.Recording
+import de.matthiasfisch.audiodragon.core.model.*
 import io.reactivex.processors.PublishProcessor
 import mu.KotlinLogging
 import javax.sound.sampled.*
@@ -25,7 +21,7 @@ class JavaAudioPlatform: AudioPlatform {
         audioSource: AudioSource,
         audioFormat: AudioFormat,
         blockSize: Int,
-        bufferFactory: (AudioFormat) -> AudioBuffer
+        bufferFactory: AudioBufferFactory
     ): Recording<*> {
         require(audioSource is JASAudioSource) { "Audio source type ${audioSource.javaClass} is not supported by this platform." }
         return JASRecording(audioSource, audioFormat, blockSize, bufferFactory)
@@ -49,7 +45,7 @@ private class JASRecording(
     audioSource: JASAudioSource,
     audioFormat: AudioFormat,
     blockSize: Int,
-    bufferFactory: (AudioFormat) -> AudioBuffer
+    bufferFactory: AudioBufferFactory
 ): Recording<JASAudioSource>(audioSource, audioFormat, blockSize, bufferFactory) {
 
     override fun record(chunkPublisher: PublishProcessor<AudioChunk>) {

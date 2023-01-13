@@ -17,7 +17,7 @@ interface AudioPlatform {
         audioSource: AudioSource,
         audioFormat: AudioFormat,
         blockSize: Int,
-        bufferFactory: (AudioFormat) -> AudioBuffer
+        bufferFactory: AudioBufferFactory
     ): Recording<*>
 }
 
@@ -26,14 +26,18 @@ abstract class AudioSource(val name: String) {
     abstract fun getAudioFormats(): List<AudioFormat>
 }
 
+fun interface AudioBufferFactory {
+    fun create(audioFormat: AudioFormat): AudioBuffer
+}
+
 abstract class Recording<T: AudioSource>(
     val audioSource: T,
     val audioFormat: AudioFormat,
     val blockSize: Int,
-    bufferFactory: (AudioFormat) -> AudioBuffer
+    bufferFactory: AudioBufferFactory
 ) : Thread("recording-${audioSource.name}") {
 
-    private val audioBuffer = ResettableAudioBuffer { bufferFactory(audioFormat) }
+    private val audioBuffer = ResettableAudioBuffer { bufferFactory.create(audioFormat) }
     private val chunkPublisher = PublishProcessor.create<AudioChunk>()
     private val stopFuture = CompletableFuture<AudioBuffer>()
     private val stopRequested = AtomicBoolean(false)
