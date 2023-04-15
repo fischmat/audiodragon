@@ -19,6 +19,8 @@ interface AudioPlatform {
         blockSize: Int,
         bufferFactory: AudioBufferFactory
     ): Recording<*>
+
+    fun isSupported(): Boolean
 }
 
 abstract class AudioSource(val name: String) {

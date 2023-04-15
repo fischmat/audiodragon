@@ -64,6 +64,8 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation("io.github.microutils:kotlin-logging-jvm:3.0.4")
+	implementation("org.buildobjects:jproc:2.8.2")
+	implementation("org.apache.commons:commons-lang3:3.12.0")
 
 	// Audio file handling
 	implementation("net.jthink:jaudiotagger:3.0.1")

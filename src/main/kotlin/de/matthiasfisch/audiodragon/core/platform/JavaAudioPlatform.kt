@@ -27,6 +27,8 @@ class JavaAudioPlatform: AudioPlatform {
         return JASRecording(audioSource, audioFormat, blockSize, bufferFactory)
     }
 
+    override fun isSupported(): Boolean = true
+
     private fun isRecordable(mixer: Mixer) = mixer.targetLineInfo.filterIsInstance<DataLine.Info>().isNotEmpty()
 }
 
