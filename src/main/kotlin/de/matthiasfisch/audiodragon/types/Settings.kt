@@ -5,6 +5,7 @@ import de.matthiasfisch.audiodragon.types.settings.OutputSettings
 import de.matthiasfisch.audiodragon.types.settings.RecognitionSettings
 import de.matthiasfisch.audiodragon.types.settings.RecordingSettings
 import de.matthiasfisch.audiodragon.types.settings.SplittingSettings
+import java.time.Instant
 
 const val SETTINGS_VERSION = 1
 
@@ -14,5 +15,6 @@ data class Settings(
     val splitting: SplittingSettings,
     val output: OutputSettings,
     val recording: RecordingSettings,
-    val library: LibrarySettings
+    val library: LibrarySettings,
+    val updatedAt: Instant?
 )
