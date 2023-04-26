@@ -28,10 +28,10 @@ git pull --recurse-submodules
 git submodule update --init --recursive
 
 echo "2. Building client"
-cd "$CLIENT_SUBMODULE_PATH"
+cd "$CLIENT_SUBMODULE_PATH" || exit 1
 npm install
 npm run build
-cd -
+cd - || exit 1
 rm package-lock.json
 
 echo "3. Copying client"
@@ -46,7 +46,7 @@ else
 fi
 
 echo "4. Building application"
-cd "$PROJECT_ROOT"
+cd "$PROJECT_ROOT" || exit 1
 ./gradlew clean build
 
 
