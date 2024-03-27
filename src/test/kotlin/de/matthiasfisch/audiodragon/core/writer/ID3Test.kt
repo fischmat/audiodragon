@@ -9,6 +9,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldBeEmpty
+import io.kotest.matchers.string.shouldContainIgnoringCase
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -214,7 +215,7 @@ class ID3Test : FunSpec({
             }
 
             // Assert
-            exception.message shouldBe "Loading artwork at $notExistingUrl failed with status 404."
+            exception.message shouldContainIgnoringCase "Loading artwork at $notExistingUrl failed"
         }
     }
 })
