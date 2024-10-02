@@ -28,11 +28,6 @@ allprojects {
 
 	repositories {
 		mavenCentral()
-		jcenter() {
-			content {
-				includeModule("com.cloudburst", "java-lame")
-			}
-		}
 	}
 
 	tasks.withType<KotlinCompile> {
@@ -67,7 +62,7 @@ dependencies {
 
 	// Audio file handling
 	implementation("net.jthink:jaudiotagger:3.0.1")
-	implementation("com.cloudburst:java-lame:3.98.4")
+	implementation(files("libs/java-lame-3.98.4.jar"))
 
 	// Database
 	implementation("org.jooq:jooq:3.17.7")

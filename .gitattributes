@@ -1,0 +1,2 @@
+*.jar filter=lfs diff=lfs merge=lfs -text
+libs/java-lame-3.98.4.jar filter=lfs diff=lfs merge=lfs -text
