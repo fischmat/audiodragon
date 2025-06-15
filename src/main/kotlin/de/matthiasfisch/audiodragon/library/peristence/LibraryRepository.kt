@@ -15,7 +15,6 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.Timestamp
 import javax.imageio.ImageIO
@@ -23,40 +22,6 @@ import kotlin.io.path.absolutePathString
 import kotlin.time.Duration.Companion.milliseconds
 
 private val LOGGER = KotlinLogging.logger {}
-
-private val LIBRARY_ITEMS_TABLE = DSL.table("LibraryItems")
-private val LIBITEM_FILE_PATH_FIELD = DSL.field("filePath", CLOB)
-private val LIBITEM_ADDED_AT_FIELD = DSL.field("addedAt", TIMESTAMP)
-private val LIBITEM_UPDATED_AT_FIELD = DSL.field("updatedAt", TIMESTAMP)
-private val LIBITEM_TITLE_FIELD = DSL.field("title", CLOB)
-private val LIBITEM_ARTIST_FIELD = DSL.field("artist", CLOB)
-private val LIBITEM_ALBUM_FIELD = DSL.field("album", CLOB)
-private val LIBITEM_RELEASE_YEAR_FIELD = DSL.field("releaseYear", CLOB)
-private val LIBITEM_FRONT_COVER_FIELD = DSL.field("frontCoverart", BLOB)
-private val LIBITEM_BACK_COVER_FIELD = DSL.field("backCoverart", BLOB)
-private val LIBITEM_LYRICS_FIELD = DSL.field("lyrics", CLOB)
-private val LIBITEM_LENGTH_FIELD = DSL.field("lengthMillis", INTEGER)
-private val LIBRARY_ITEMS_TABLE_FIELDS = listOf(
-    LIBITEM_FILE_PATH_FIELD,
-    LIBITEM_ADDED_AT_FIELD,
-    LIBITEM_UPDATED_AT_FIELD,
-    LIBITEM_TITLE_FIELD,
-    LIBITEM_ARTIST_FIELD,
-    LIBITEM_ALBUM_FIELD,
-    LIBITEM_RELEASE_YEAR_FIELD,
-    LIBITEM_FRONT_COVER_FIELD,
-    LIBITEM_BACK_COVER_FIELD,
-    LIBITEM_LYRICS_FIELD,
-    LIBITEM_LENGTH_FIELD
-)
-
-private val LIBITEM_GENRE_TABLE = DSL.table("LibraryItemGenres")
-private val LIBITEM_GENRE_PATH_FIELD = DSL.field("itemFilePath", CLOB)
-private val LIBITEM_GENRE_NAME_FIELD = DSL.field("genreName", CLOB)
-
-private val LIBITEM_LABEL_TABLE = DSL.table("LibraryItemLabels")
-private val LIBITEM_LABEL_PATH_FIELD = DSL.field("itemFilePath", CLOB)
-private val LIBITEM_LABEL_NAME_FIELD = DSL.field("labelName", CLOB)
 
 class LibraryRepository(dbFilePath: Path) {
     private val jdbcUrl = "jdbc:sqlite:${dbFilePath.absolutePathString()}"
@@ -76,8 +41,8 @@ class LibraryRepository(dbFilePath: Path) {
     fun getItem(filePath: Path) = txn { ctx ->
         val pathString = filePath.absolutePathString()
         val itemRow = DSL.using(ctx)
-            .selectFrom(LIBRARY_ITEMS_TABLE)
-            .where(LIBITEM_FILE_PATH_FIELD.eq(pathString))
+            .selectFrom(Tables.LibraryItems.table)
+            .where(Tables.LibraryItems.FILE_PATH_FIELD.eq(pathString))
             .fetchOne()
             ?: return@txn null
 
@@ -98,68 +63,67 @@ class LibraryRepository(dbFilePath: Path) {
         val searchLikeExp = "%${search?.lowercase()}%"
         val conditions = listOfNotNull(
             search?.let {
-                DSL.lower(LIBITEM_TITLE_FIELD).like(searchLikeExp, '\\')
+                DSL.lower(Tables.LibraryItems.TITLE_FIELD).like(searchLikeExp, '\\')
                     .or(
-                        DSL.lower(LIBITEM_ARTIST_FIELD).like(searchLikeExp, '\\')
-                            .or(DSL.lower(LIBITEM_ALBUM_FIELD).like(searchLikeExp, '\\'))
+                        DSL.lower(Tables.LibraryItems.ARTIST_FIELD).like(searchLikeExp, '\\')
+                            .or(DSL.lower(Tables.LibraryItems.ALBUM_FIELD).like(searchLikeExp, '\\'))
                     )
             },
-            titleSearch?.let { DSL.lower(LIBITEM_TITLE_FIELD).like("%$it%", '\\') },
-            artistSearch?.let { DSL.lower(LIBITEM_ARTIST_FIELD).like("%$it%", '\\') },
-            albumSearch?.let { DSL.lower(LIBITEM_ALBUM_FIELD).like("%$it%", '\\') },
-            genres?.map { it.lowercase() }?.let { DSL.lower(LIBITEM_GENRE_NAME_FIELD).`in`(it) }
+            titleSearch?.let { DSL.lower(Tables.LibraryItems.TITLE_FIELD).like("%$it%", '\\') },
+            artistSearch?.let { DSL.lower(Tables.LibraryItems.ARTIST_FIELD).like("%$it%", '\\') },
+            albumSearch?.let { DSL.lower(Tables.LibraryItems.ALBUM_FIELD).like("%$it%", '\\') },
+            genres?.map { it.lowercase() }?.let { DSL.lower(Tables.Genres.NAME_FIELD).`in`(it) }
         )
 
         DSL.using(ctx)
-            .selectDistinct(LIBRARY_ITEMS_TABLE_FIELDS)
-            .from(LIBRARY_ITEMS_TABLE)
-            .leftJoin(LIBITEM_GENRE_TABLE).on(LIBITEM_FILE_PATH_FIELD.eq(LIBITEM_GENRE_PATH_FIELD))
-            .where(conditions.ifEmpty { listOf(DSL.trueCondition()) })
-            .orderBy(sortOrder.jooqOrder(sortBy.tableField), LIBITEM_UPDATED_AT_FIELD.desc())
+            .selectDistinct(Tables.LibraryItems.allFields)
+            .from(Tables.LibraryItems.table)
+            .leftJoin(Tables.Genres.table).on(Tables.LibraryItems.FILE_PATH_FIELD.eq(Tables.Genres.PATH_FIELD))
+            .where(conditions)
+            .orderBy(sortOrder.jooqOrder(sortBy.tableField), Tables.LibraryItems.UPDATED_AT_FIELD.desc())
             .let {
                 if (page != null) {
-                    it.offset(pageSize * (page-1)).limit(pageSize)
+                    it.offset(pageSize * (page - 1)).limit(pageSize)
                 } else {
                     it
                 }
             }
             .fetch()
             .map {
-                val path = Paths.get(it.get(LIBITEM_FILE_PATH_FIELD))
+                val path = Paths.get(it.get(Tables.LibraryItems.FILE_PATH_FIELD))
                 recordToLibraryItem(it, getGenres(ctx, path), getLabels(ctx, path))
             }
     }
 
     fun replaceAllItems(items: List<LibraryItem>) = txn { ctx ->
         DSL.using(ctx)
-            .deleteFrom(LIBRARY_ITEMS_TABLE)
-            .where(DSL.trueCondition().isTrue)
+            .truncateTable(Tables.LibraryItems.table)
             .execute()
         items.forEach { upsertItem(ctx, it) }
     }
 
     fun deleteItem(filePath: Path) = txn { ctx ->
         DSL.using(ctx)
-            .deleteFrom(LIBRARY_ITEMS_TABLE)
-            .where(LIBITEM_FILE_PATH_FIELD.eq(filePath.absolutePathString()))
+            .deleteFrom(Tables.LibraryItems.table)
+            .where(Tables.LibraryItems.FILE_PATH_FIELD.eq(filePath.absolutePathString()))
             .execute() > 0
     }
 
     private fun upsertItem(ctx: Configuration, item: LibraryItem) {
         DSL.using(ctx)
-            .insertInto(LIBRARY_ITEMS_TABLE)
+            .insertInto(Tables.LibraryItems.table)
             .columns(
-                LIBITEM_FILE_PATH_FIELD,
-                LIBITEM_ADDED_AT_FIELD,
-                LIBITEM_UPDATED_AT_FIELD,
-                LIBITEM_TITLE_FIELD,
-                LIBITEM_ARTIST_FIELD,
-                LIBITEM_ALBUM_FIELD,
-                LIBITEM_RELEASE_YEAR_FIELD,
-                LIBITEM_FRONT_COVER_FIELD,
-                LIBITEM_BACK_COVER_FIELD,
-                LIBITEM_LYRICS_FIELD,
-                LIBITEM_LENGTH_FIELD
+                Tables.LibraryItems.FILE_PATH_FIELD,
+                Tables.LibraryItems.ADDED_AT_FIELD,
+                Tables.LibraryItems.UPDATED_AT_FIELD,
+                Tables.LibraryItems.TITLE_FIELD,
+                Tables.LibraryItems.ARTIST_FIELD,
+                Tables.LibraryItems.ALBUM_FIELD,
+                Tables.LibraryItems.RELEASE_YEAR_FIELD,
+                Tables.LibraryItems.FRONT_COVER_FIELD,
+                Tables.LibraryItems.BACK_COVER_FIELD,
+                Tables.LibraryItems.LYRICS_FIELD,
+                Tables.LibraryItems.LENGTH_FIELD
             )
             .values(
                 item.filePath.absolutePathString(),
@@ -174,38 +138,38 @@ class LibraryRepository(dbFilePath: Path) {
                 item.lyrics?.joinToString("\n"),
                 item.length?.inWholeMilliseconds?.toInt()
             )
-            .onConflict(LIBITEM_FILE_PATH_FIELD)
+            .onConflict(Tables.LibraryItems.FILE_PATH_FIELD)
             .doUpdate()
             .set(
                 mapOf(
-                    LIBITEM_UPDATED_AT_FIELD to Timestamp(item.filePath.toFile().lastModified()),
-                    LIBITEM_TITLE_FIELD to item.title,
-                    LIBITEM_ARTIST_FIELD to item.artist,
-                    LIBITEM_ALBUM_FIELD to item.album,
-                    LIBITEM_RELEASE_YEAR_FIELD to item.releaseYear,
-                    LIBITEM_FRONT_COVER_FIELD to item.frontCoverart.value?.let { imageBytes(it) },
-                    LIBITEM_BACK_COVER_FIELD to item.backCoverart.value?.let { imageBytes(it) },
-                    LIBITEM_LYRICS_FIELD to item.lyrics?.joinToString("\n"),
-                    LIBITEM_LENGTH_FIELD to item.length?.inWholeMilliseconds?.toInt()
+                    Tables.LibraryItems.UPDATED_AT_FIELD to Timestamp(item.filePath.toFile().lastModified()),
+                    Tables.LibraryItems.TITLE_FIELD to item.title,
+                    Tables.LibraryItems.ARTIST_FIELD to item.artist,
+                    Tables.LibraryItems.ALBUM_FIELD to item.album,
+                    Tables.LibraryItems.RELEASE_YEAR_FIELD to item.releaseYear,
+                    Tables.LibraryItems.FRONT_COVER_FIELD to item.frontCoverart.value?.let { imageBytes(it) },
+                    Tables.LibraryItems.BACK_COVER_FIELD to item.backCoverart.value?.let { imageBytes(it) },
+                    Tables.LibraryItems.LYRICS_FIELD to item.lyrics?.joinToString("\n"),
+                    Tables.LibraryItems.LENGTH_FIELD to item.length?.inWholeMilliseconds?.toInt()
                 )
             )
             .execute()
 
         DSL.using(ctx)
-            .deleteFrom(LIBITEM_GENRE_TABLE)
-            .where(LIBITEM_GENRE_PATH_FIELD.eq(item.filePath.absolutePathString()))
+            .deleteFrom(Tables.Genres.table)
+            .where(Tables.Genres.PATH_FIELD.eq(item.filePath.absolutePathString()))
             .execute()
         DSL.using(ctx)
-            .deleteFrom(LIBITEM_LABEL_TABLE)
-            .where(LIBITEM_LABEL_PATH_FIELD.eq(item.filePath.absolutePathString()))
+            .deleteFrom(Tables.Labels.table)
+            .where(Tables.Labels.PATH_FIELD.eq(item.filePath.absolutePathString()))
             .execute()
 
         item.genres.forEach {
             DSL.using(ctx)
-                .insertInto(LIBITEM_GENRE_TABLE)
+                .insertInto(Tables.Genres.table)
                 .columns(
-                    LIBITEM_GENRE_PATH_FIELD,
-                    LIBITEM_GENRE_NAME_FIELD
+                    Tables.Genres.PATH_FIELD,
+                    Tables.Genres.NAME_FIELD
                 )
                 .values(item.filePath.absolutePathString(), it)
                 .execute()
@@ -213,10 +177,10 @@ class LibraryRepository(dbFilePath: Path) {
 
         item.labels.forEach {
             DSL.using(ctx)
-                .insertInto(LIBITEM_LABEL_TABLE)
+                .insertInto(Tables.Labels.table)
                 .columns(
-                    LIBITEM_LABEL_PATH_FIELD,
-                    LIBITEM_LABEL_NAME_FIELD
+                    Tables.Labels.PATH_FIELD,
+                    Tables.Labels.NAME_FIELD
                 )
                 .values(item.filePath.absolutePathString(), it)
                 .execute()
@@ -225,43 +189,43 @@ class LibraryRepository(dbFilePath: Path) {
 
     private fun getGenres(ctx: Configuration, path: Path) = txn {
         DSL.using(ctx)
-            .selectFrom(LIBITEM_GENRE_TABLE)
-            .where(LIBITEM_GENRE_PATH_FIELD.eq(path.absolutePathString()))
+            .selectFrom(Tables.Genres.table)
+            .where(Tables.Genres.PATH_FIELD.eq(path.absolutePathString()))
             .fetch()
             .toList()
             .map {
-                it.get(LIBITEM_GENRE_NAME_FIELD)
+                it.get(Tables.Genres.NAME_FIELD)
             }
     }
 
     private fun getLabels(ctx: Configuration, path: Path) = txn {
         DSL.using(ctx)
-            .selectFrom(LIBITEM_LABEL_TABLE)
-            .where(LIBITEM_LABEL_PATH_FIELD.eq(path.absolutePathString()))
+            .selectFrom(Tables.Labels.table)
+            .where(Tables.Labels.PATH_FIELD.eq(path.absolutePathString()))
             .fetch()
             .toList()
             .map {
-                it.get(LIBITEM_LABEL_NAME_FIELD)
+                it.get(Tables.Labels.NAME_FIELD)
             }
     }
 
     private fun recordToLibraryItem(record: Record, genres: List<String>, labels: List<String>): LibraryItem {
-        val filePath = Paths.get(record.get(LIBITEM_FILE_PATH_FIELD))
+        val filePath = Paths.get(record.get(Tables.LibraryItems.FILE_PATH_FIELD))
 
         return LibraryItem(
             filePath,
-            record.get(LIBITEM_ADDED_AT_FIELD).toInstant(),
-            record.get(LIBITEM_UPDATED_AT_FIELD).toInstant(),
-            record.get(LIBITEM_TITLE_FIELD),
-            record.get(LIBITEM_ARTIST_FIELD),
-            record.get(LIBITEM_ALBUM_FIELD),
+            record.get(Tables.LibraryItems.ADDED_AT_FIELD).toInstant(),
+            record.get(Tables.LibraryItems.UPDATED_AT_FIELD).toInstant(),
+            record.get(Tables.LibraryItems.TITLE_FIELD),
+            record.get(Tables.LibraryItems.ARTIST_FIELD),
+            record.get(Tables.LibraryItems.ALBUM_FIELD),
             genres,
             labels,
-            record.get(LIBITEM_RELEASE_YEAR_FIELD),
-            imageDataLoader(filePath, LIBITEM_FRONT_COVER_FIELD),
-            imageDataLoader(filePath, LIBITEM_BACK_COVER_FIELD),
-            record.get(LIBITEM_LYRICS_FIELD)?.split("\n"),
-            record.get(LIBITEM_LENGTH_FIELD)?.milliseconds,
+            record.get(Tables.LibraryItems.RELEASE_YEAR_FIELD),
+            imageDataLoader(filePath, Tables.LibraryItems.FRONT_COVER_FIELD),
+            imageDataLoader(filePath, Tables.LibraryItems.BACK_COVER_FIELD),
+            record.get(Tables.LibraryItems.LYRICS_FIELD)?.split("\n"),
+            record.get(Tables.LibraryItems.LENGTH_FIELD)?.milliseconds,
         )
     }
 
@@ -269,8 +233,8 @@ class LibraryRepository(dbFilePath: Path) {
         txn { ctx ->
             DSL.using(ctx)
                 .select(field)
-                .from(LIBRARY_ITEMS_TABLE)
-                .where(LIBITEM_FILE_PATH_FIELD.eq(filePath.absolutePathString()))
+                .from(Tables.LibraryItems.table)
+                .where(Tables.LibraryItems.FILE_PATH_FIELD.eq(filePath.absolutePathString()))
                 .fetchOne()
                 ?.get(field)
                 ?.let { buffer ->
@@ -289,25 +253,66 @@ class LibraryRepository(dbFilePath: Path) {
     }
 
     private fun <T> txn(action: (Configuration) -> T): T =
-        onConnection { con ->
-            DSL.using(con).transactionResult(action)
+        DriverManager.getConnection(jdbcUrl, "", "").use {
+            DSL.using(it).transactionResult(action)
         }
-
-    private fun <T> onConnection(action: (Connection) -> T): T {
-        return DriverManager.getConnection(jdbcUrl, "", "").use(action)
-    }
 }
 
 enum class LibraryItemSortField(val tableField: Field<*>) {
-    FILE_PATH(LIBITEM_FILE_PATH_FIELD),
-    ADDED_AT(LIBITEM_ADDED_AT_FIELD),
-    UPDATED_AT(LIBITEM_UPDATED_AT_FIELD),
-    TITLE(LIBITEM_TITLE_FIELD),
-    ARTIST(LIBITEM_ARTIST_FIELD),
-    ALBUM(LIBITEM_ALBUM_FIELD),
-    LENGTH(LIBITEM_LENGTH_FIELD)
+    FILE_PATH(Tables.LibraryItems.FILE_PATH_FIELD),
+    ADDED_AT(Tables.LibraryItems.ADDED_AT_FIELD),
+    UPDATED_AT(Tables.LibraryItems.UPDATED_AT_FIELD),
+    TITLE(Tables.LibraryItems.TITLE_FIELD),
+    ARTIST(Tables.LibraryItems.ARTIST_FIELD),
+    ALBUM(Tables.LibraryItems.ALBUM_FIELD),
+    LENGTH(Tables.LibraryItems.LENGTH_FIELD)
 }
 
 enum class SortOrder(val jooqOrder: (Field<*>) -> SortField<*>) {
     ASC({ it.asc() }), DESC({ it.desc() })
+}
+private object Tables {
+    object LibraryItems {
+        val table = DSL.table("LibraryItems")
+
+        val FILE_PATH_FIELD = DSL.field("filePath", CLOB)
+        val ADDED_AT_FIELD = DSL.field("addedAt", TIMESTAMP)
+        val UPDATED_AT_FIELD = DSL.field("updatedAt", TIMESTAMP)
+        val TITLE_FIELD = DSL.field("title", CLOB)
+        val ARTIST_FIELD = DSL.field("artist", CLOB)
+        val ALBUM_FIELD = DSL.field("album", CLOB)
+        val RELEASE_YEAR_FIELD = DSL.field("releaseYear", CLOB)
+        val FRONT_COVER_FIELD = DSL.field("frontCoverart", BLOB)
+        val BACK_COVER_FIELD = DSL.field("backCoverart", BLOB)
+        val LYRICS_FIELD = DSL.field("lyrics", CLOB)
+        val LENGTH_FIELD = DSL.field("lengthMillis", INTEGER)
+
+        val allFields = listOf(
+            FILE_PATH_FIELD,
+            ADDED_AT_FIELD,
+            UPDATED_AT_FIELD,
+            TITLE_FIELD,
+            ARTIST_FIELD,
+            ALBUM_FIELD,
+            RELEASE_YEAR_FIELD,
+            FRONT_COVER_FIELD,
+            BACK_COVER_FIELD,
+            LYRICS_FIELD,
+            LENGTH_FIELD
+        )
+    }
+
+    object Genres {
+        val table = DSL.table("LibraryItemGenres")
+
+        val PATH_FIELD = DSL.field("itemFilePath", CLOB)
+        val NAME_FIELD = DSL.field("genreName", CLOB)
+    }
+
+    object Labels {
+        val table = DSL.table("LibraryItemLabels")
+
+        val PATH_FIELD = DSL.field("itemFilePath", CLOB)
+        val NAME_FIELD = DSL.field("labelName", CLOB)
+    }
 }
