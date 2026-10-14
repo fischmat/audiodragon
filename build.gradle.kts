@@ -15,7 +15,7 @@ plugins {
 	id("org.owasp.dependencycheck") version "10.0.3" apply false
 }
 
-java.sourceCompatibility = JavaVersion.VERSION_17
+java.sourceCompatibility = JavaVersion.VERSION_21
 
 configurations {
 	compileOnly {
@@ -34,7 +34,7 @@ allprojects {
 	tasks.withType<KotlinCompile> {
 		compilerOptions {
 			freeCompilerArgs.add("-Xjsr305=strict")
-			jvmTarget.set(JvmTarget.JVM_17)
+			jvmTarget.set(JvmTarget.JVM_21)
 		}
 	}
 
@@ -68,8 +68,8 @@ dependencies {
 	implementation(files("libs/java-lame-3.98.4.jar"))
 
 	// Database
-	implementation("org.jooq:jooq:3.19.39")
-	implementation("org.flywaydb:flyway-core:11.20.3")
+	implementation("org.jooq:jooq:3.20.20")
+	implementation("org.flywaydb:flyway-core:13.10.0")
 	implementation("org.xerial:sqlite-jdbc:3.53.4.0")
 
 	// Testing
