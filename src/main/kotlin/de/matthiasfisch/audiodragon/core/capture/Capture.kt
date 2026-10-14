@@ -88,7 +88,6 @@ class Capture constructor(
      * Cancels a previously scheduled stop of the capture.
      */
     fun cancelStop() {
-        stopFuture.cancel(false)
         stopRequested = false
     }
 
