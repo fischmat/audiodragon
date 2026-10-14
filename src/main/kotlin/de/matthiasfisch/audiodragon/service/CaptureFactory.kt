@@ -25,12 +25,17 @@ class CaptureFactory(
     private val settingsService: SettingsService,
     private val audioPlatformService: AudioPlatformService
 ) {
-    fun createCapture(audioSource: AudioSource, audioFormat: AudioFormat, fileOutputOptions: FileOutputOptionsDTO): Capture {
+    fun createCapture(
+        audioSource: AudioSource,
+        audioFormat: AudioFormat,
+        recognizeSongs: Boolean,
+        fileOutputOptions: FileOutputOptionsDTO
+    ): Capture {
         val settings = settingsService.settings
         return Capture(
             recording = createRecording(settings, audioSource, audioFormat),
             trackBoundsDetector = getTrackBoundsDetector(settings),
-            trackRecognizer = getTrackRecognizer(settings),
+            trackRecognizer = if (recognizeSongs) getTrackRecognizer(settings) else null,
             fileWriter = getFileWriter(fileOutputOptions, settings)
         )
     }

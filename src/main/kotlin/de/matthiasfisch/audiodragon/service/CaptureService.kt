@@ -32,7 +32,7 @@ class CaptureService(
             throw CaptureOngoingException(audioSource)
         }
 
-        val capture = captureFactory.createCapture(audioSource, audioFormat, fileOutputOptions)
+        val capture = captureFactory.createCapture(audioSource, audioFormat, recognizeSongs, fileOutputOptions)
         captureEventBroker.monitor(capture)
         capture.start()
         ongoingCaptures[audioSource.getId()] = capture
