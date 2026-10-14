@@ -11,12 +11,17 @@ function check_binary_present() {
 }
 
 check_binary_present "git"
+check_binary_present "git-lfs"
 check_binary_present "npm"
 check_binary_present "node"
 check_binary_present "java"
 
 PROJECT_ROOT=${1-$PWD}
 echo "Project directory is $PROJECT_ROOT"
+
+echo "Fetching Git LFS build artifacts"
+git -C "$PROJECT_ROOT" lfs pull --include="gradle/wrapper/gradle-wrapper.jar,libs/java-lame-3.98.4.jar"
+
 PROJECT_NAME=$(./gradlew properties -q | grep "^name:" | awk '{print $2}')
 PROJECT_VERSION=$(./gradlew properties -q | grep "^version:" | awk '{print $2}')
 CLIENT_SUBMODULE_PATH="$PROJECT_ROOT/audiodragon-client"
