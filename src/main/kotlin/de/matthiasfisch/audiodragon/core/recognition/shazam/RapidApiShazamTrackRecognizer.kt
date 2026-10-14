@@ -135,12 +135,13 @@ open class RapidApiShazamTrackRecognizer(
         return Base64.getEncoder().encodeToString(pcmDataInShazamFormat)
     }
 
-    private fun convertPcmDataToShazamFormat(sample: PcmData, sourceFormat: AudioFormat) = try {
-        val audioInputStream = AudioInputStream(sample.inputStream(), sourceFormat, sample.size.toLong())
-        val shazamFormatInput: AudioInputStream = AudioSystem.getAudioInputStream(SHAZAM_FORMAT, audioInputStream)
-        shazamFormatInput.readAllBytes()
-    } catch (e: IOException) {
-        throw IOException("Failed to convert PCM data to Shazam format due to an IO exception.", e)
+}
+
+internal fun convertPcmDataToShazamFormat(sample: PcmData, sourceFormat: AudioFormat): ByteArray = try {
+    AudioInputStream(sample.inputStream(), sourceFormat, (sample.size / sourceFormat.frameSize).toLong()).use { input ->
+        AudioSystem.getAudioInputStream(SHAZAM_FORMAT, input).use { it.readAllBytes() }
     }
+} catch (e: IOException) {
+    throw IOException("Failed to convert PCM data to Shazam format due to an IO exception.", e)
 }
 

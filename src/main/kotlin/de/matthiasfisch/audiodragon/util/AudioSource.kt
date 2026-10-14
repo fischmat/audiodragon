@@ -6,4 +6,4 @@ import java.util.*
 
 typealias AudioSourceId = String
 
-fun AudioSource.getId(): AudioSourceId = Base64.getEncoder().encodeToString(name.toByteArray(StandardCharsets.UTF_8))
+fun AudioSource.getId(): AudioSourceId = Base64.getEncoder().encodeToString(identity.toByteArray(StandardCharsets.UTF_8))

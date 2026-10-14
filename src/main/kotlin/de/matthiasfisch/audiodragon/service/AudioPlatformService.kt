@@ -2,12 +2,14 @@ package de.matthiasfisch.audiodragon.service
 
 import de.matthiasfisch.audiodragon.core.model.AudioPlatform
 import de.matthiasfisch.audiodragon.core.platform.JavaAudioPlatform
+import de.matthiasfisch.audiodragon.core.platform.PipeWireAudioPlatform
 import de.matthiasfisch.audiodragon.util.AudioSourceId
 import de.matthiasfisch.audiodragon.util.getId
 import org.springframework.stereotype.Service
 
 private val BUILTIN_PLATFORMS = listOf(
-    JavaAudioPlatform()
+    JavaAudioPlatform(),
+    PipeWireAudioPlatform()
 )
 
 @Service
