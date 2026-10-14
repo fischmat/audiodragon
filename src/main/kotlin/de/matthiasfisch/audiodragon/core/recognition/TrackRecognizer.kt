@@ -31,7 +31,7 @@ abstract class TrackRecognizer(
         audioProvider: () -> AudioBuffer,
         previousSamples: List<PcmData>
     ): CompletableFuture<TrackData?> {
-        check(previousSamples.size + 1 < maxRetriesForRecognition) { "Maximum retries reached unexpectedly." }
+        check(previousSamples.size < maxRetriesForRecognition) { "Maximum retries reached unexpectedly." }
 
         val audioBuffer = audioProvider()
         val sample = takeSample(audioBuffer)
