@@ -23,6 +23,8 @@ interface AudioPlatform {
 
 abstract class AudioSource(val name: String) {
 
+    open val identity: String get() = name
+
     abstract fun getAudioFormats(): List<AudioFormat>
 }
 
@@ -43,6 +45,8 @@ abstract class Recording<T: AudioSource>(
     private val stopRequested = AtomicBoolean(false)
 
     protected abstract fun record(chunkPublisher: PublishProcessor<AudioChunk>)
+
+    protected open fun onStopRequested() {}
 
     override fun run() {
         chunkPublisher.subscribe {
@@ -66,6 +70,7 @@ abstract class Recording<T: AudioSource>(
 
     fun stopRecording(): CompletableFuture<AudioBuffer> {
         stopRequested.set(true)
+        onStopRequested()
         return stopFuture.copy()
     }
 
