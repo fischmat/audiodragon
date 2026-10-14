@@ -19,7 +19,7 @@ class CaptureEvents {
     }
 
     fun trackEnded() {
-        trackStartedPublisher.onNext(Unit)
+        trackEndedPublisher.onNext(Unit)
     }
 
     fun trackRecognized(trackData: TrackData) {
