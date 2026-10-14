@@ -1,6 +1,7 @@
 package de.matthiasfisch.audiodragon.library
 
 import de.matthiasfisch.audiodragon.library.peristence.LibraryItem
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardWatchEventKinds.*
 import java.nio.file.WatchEvent
@@ -18,7 +19,7 @@ fun watchLibraryDirectory(
     require(path.toFile().isDirectory) { "Only directories can be watched, but $path is not a directory." }
     val watchService = path.fileSystem.newWatchService()
 
-    path.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE)
+    registerDirectories(path, watchService)
 
     val stop = AtomicBoolean(false)
     val scheduler = Executors.newSingleThreadExecutor()
@@ -27,9 +28,14 @@ fun watchLibraryDirectory(
             val watch = watchService.take()
             try {
                 val events = watch.pollEvents()
-                val pathsCreated = getPathEvents(events, ENTRY_CREATE, path)
-                val pathsModified = getPathEvents(events, ENTRY_MODIFY, path)
-                val pathsDeleted = getPathEvents(events, ENTRY_DELETE, path)
+                val watchedDirectory = watch.watchable() as Path
+                val pathsCreated = getPathEvents(events, ENTRY_CREATE, watchedDirectory)
+                val pathsModified = getPathEvents(events, ENTRY_MODIFY, watchedDirectory)
+                val pathsDeleted = getPathEvents(events, ENTRY_DELETE, watchedDirectory)
+
+                pathsCreated.filter { Files.isDirectory(it) }.forEach {
+                    registerDirectories(it, watchService)
+                }
 
                 val createdItems = pathsCreated.mapNotNull { runCatching { LibraryScanner.scanFile(it) }.getOrNull() }
                 val modifiedItems = pathsModified.mapNotNull { runCatching { LibraryScanner.scanFile(it) }.getOrNull() }
@@ -48,6 +54,13 @@ fun watchLibraryDirectory(
         scheduler.awaitTermination(5, TimeUnit.SECONDS)
         watchService.close()
         scheduler.shutdownNow()
+    }
+}
+
+private fun registerDirectories(path: Path, watchService: java.nio.file.WatchService) {
+    Files.walk(path).use { paths ->
+        paths.filter { Files.isDirectory(it) }
+            .forEach { it.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE) }
     }
 }
 
