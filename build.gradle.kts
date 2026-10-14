@@ -2,16 +2,17 @@ import com.github.jk1.license.filter.DependencyFilter
 import com.github.jk1.license.filter.LicenseBundleNormalizer
 import com.github.jk1.license.render.InventoryHtmlReportRenderer
 import com.github.jk1.license.render.ReportRenderer
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 plugins {
-	id("org.springframework.boot") version "3.0.2"
-	id("io.spring.dependency-management") version "1.1.0"
-	kotlin("jvm") version "1.7.22"
-	kotlin("plugin.spring") version "1.7.22"
-	id("com.github.jk1.dependency-license-report") version "2.0"
-	id("org.owasp.dependencycheck") version "7.3.2" apply false
+	id("org.springframework.boot") version "3.5.16"
+	id("io.spring.dependency-management") version "1.1.7"
+	kotlin("jvm") version "2.2.21"
+	kotlin("plugin.spring") version "2.2.21"
+	id("com.github.jk1.dependency-license-report") version "3.1.4"
+	id("org.owasp.dependencycheck") version "10.0.3" apply false
 }
 
 java.sourceCompatibility = JavaVersion.VERSION_17
@@ -31,9 +32,9 @@ allprojects {
 	}
 
 	tasks.withType<KotlinCompile> {
-		kotlinOptions {
-			freeCompilerArgs = listOf("-Xjsr305=strict")
-			jvmTarget = "17"
+		compilerOptions {
+			freeCompilerArgs.add("-Xjsr305=strict")
+			jvmTarget.set(JvmTarget.JVM_17)
 		}
 	}
 
@@ -54,30 +55,32 @@ dependencies {
 	// Utilities
 	implementation("io.reactivex.rxjava2:rxkotlin:2.4.0")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-	implementation("com.squareup.okhttp3:okhttp:4.10.0")
-	implementation("com.jayway.jsonpath:json-path:2.7.0")
+	implementation("com.squareup.okhttp3:okhttp:5.5.0")
+	implementation("com.jayway.jsonpath:json-path:3.0.0")
+	// JsonPath 3 declares its default JSON provider as runtime-only; it is used directly here.
+	implementation("net.minidev:json-smart:2.6.0")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-	implementation("io.github.microutils:kotlin-logging-jvm:3.0.4")
+	implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
 
 	// Audio file handling
 	implementation("net.jthink:jaudiotagger:3.0.1")
 	implementation(files("libs/java-lame-3.98.4.jar"))
 
 	// Database
-	implementation("org.jooq:jooq:3.17.7")
-	implementation("org.flywaydb:flyway-core:9.12.0")
-	implementation("org.xerial:sqlite-jdbc:3.40.0.0")
+	implementation("org.jooq:jooq:3.20.20")
+	implementation("org.flywaydb:flyway-core:13.10.0")
+	implementation("org.xerial:sqlite-jdbc:3.53.4.0")
 
 	// Testing
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
-	testImplementation("io.kotest:kotest-runner-junit5:5.5.4")
-	testImplementation("io.mockk:mockk:1.13.3")
-	testImplementation("io.kotest.extensions:kotest-extensions-spring:1.1.2")
+	testImplementation("io.kotest:kotest-runner-junit5:6.2.6")
+	testImplementation("io.mockk:mockk:1.14.11")
+	testImplementation("io.kotest:kotest-extensions-spring:6.2.6")
 
 	// CVE mitigation
-	implementation("org.yaml:snakeyaml:1.33") {
-		because("CVE-2022-38751")
+	implementation("org.yaml:snakeyaml:2.7") {
+		because("CVE-2022-38751 and subsequent SnakeYAML vulnerabilities")
 	}
 }
 
@@ -106,5 +109,5 @@ licenseReport {
 }
 
 configure<org.owasp.dependencycheck.gradle.extension.DependencyCheckExtension> {
-	format = org.owasp.dependencycheck.reporting.ReportGenerator.Format.ALL
+	format = "ALL"
 }
