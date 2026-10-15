@@ -69,5 +69,7 @@ data class AudioMetricsEventDTO(
     val rms: Double,
     val trackTime: Long,
     val frequencies: List<Double>,
-    val buffer: BufferStats
+    val buffer: BufferStats,
+    val sourceId: String? = null,
+    val preview: Boolean = false
 ): EventDTO()
