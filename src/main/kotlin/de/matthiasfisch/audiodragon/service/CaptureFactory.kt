@@ -15,6 +15,7 @@ import de.matthiasfisch.audiodragon.core.writer.WavFileWriter
 import de.matthiasfisch.audiodragon.types.FileOutputOptionsDTO
 import de.matthiasfisch.audiodragon.types.MP3OptionsDTO
 import de.matthiasfisch.audiodragon.types.Settings
+import de.matthiasfisch.audiodragon.types.WavOptionsDTO
 import de.matthiasfisch.audiodragon.types.settings.*
 import org.springframework.stereotype.Component
 import javax.sound.sampled.AudioFormat
