@@ -23,6 +23,7 @@ abstract class RecognitionSettings(
 @JsonIgnoreProperties(ignoreUnknown = true)
 class ShazamRecognitionSettings(
     val rapidApiToken: String,
+    val rapidApiTokenEnvironment: String? = DEFAULT_RAPID_API_TOKEN_ENVIRONMENT,
     secondsUntilRecognition: Int,
     sampleSeconds: Int,
     maxRetries: Int,
@@ -30,6 +31,16 @@ class ShazamRecognitionSettings(
     override val apiBaseUrl: String?,
     override val network: NetworkSettings?
 ): RecognitionSettings(secondsUntilRecognition, sampleSeconds, maxRetries, postprocessors), APISettings
+
+const val DEFAULT_RAPID_API_TOKEN_ENVIRONMENT = "AUDIODRAGON_RAPID_API_TOKEN"
+
+/** Prefer a process-provided secret so API keys need not be stored on disk. */
+fun ShazamRecognitionSettings.resolveRapidApiToken(environment: Map<String, String> = System.getenv()): String {
+    val environmentToken = rapidApiTokenEnvironment
+        ?.let(environment::get)
+        ?.takeIf(String::isNotBlank)
+    return environmentToken ?: rapidApiToken
+}
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes(JsonSubTypes.Type(value = MusicBrainzPostprocessorConfig::class, name = "musicbrainz"))

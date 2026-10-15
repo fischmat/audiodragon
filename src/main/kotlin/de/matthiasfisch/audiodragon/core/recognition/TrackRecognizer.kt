@@ -38,8 +38,10 @@ abstract class TrackRecognizer(
         val track = try {
             recognizeTrackInternal(sample, audioBuffer.audioFormat(), previousSamples)
         } catch (e: IOException) {
-            LOGGER.error(e) { "Track recognition failed." }
-            return CompletableFuture.failedFuture(e)
+            // Recognition is an optional enrichment step. Network and provider
+            // faults should consume a retry, not fail the capture pipeline.
+            LOGGER.warn(e) { "Track recognition attempt failed; it will be retried if attempts remain." }
+            null
         }
 
         if (track != null) {

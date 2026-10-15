@@ -90,11 +90,11 @@ open class RapidApiShazamTrackRecognizer(
             response.body.use { responseBody ->
                 LOGGER.info {
                     "RapidAPI Shazam: ${
-                        response.headers("x-ratelimit-requests-remaining").first()
+                        response.header("x-ratelimit-requests-remaining") ?: "unknown"
                     } of ${
-                        response.headers("x-ratelimit-requests-limit").first()
+                        response.header("x-ratelimit-requests-limit") ?: "unknown"
                     } requests remaining in period (will be reset in ${
-                        response.headers("x-ratelimit-requests-reset").first().toInt().seconds
+                        response.header("x-ratelimit-requests-reset")?.toLongOrNull()?.seconds ?: "unknown"
                     })."
                 }
                 return if (response.isSuccessful && responseBody != null) {
