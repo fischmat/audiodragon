@@ -32,6 +32,13 @@ class JavaAudioPlatform: AudioPlatform {
 
 class JASAudioSource(val mixer: Mixer): AudioSource(mixer.mixerInfo.name) {
 
+    override val kind: AudioSourceKind
+        get() = if ("(stereo mix|loopback|monitor)".toRegex(RegexOption.IGNORE_CASE).containsMatchIn(name)) {
+            AudioSourceKind.SYSTEM_AUDIO
+        } else {
+            AudioSourceKind.INPUT
+        }
+
     override fun getAudioFormats(): List<AudioFormat> {
         val dataLineInfos = mixer.targetLineInfo.filterIsInstance<DataLine.Info>()
         check(dataLineInfos.isNotEmpty()) { "No target data lines available for mixer ${name}." }

@@ -21,9 +21,20 @@ interface AudioPlatform {
     ): Recording<*>
 }
 
+enum class AudioSourceKind {
+    SYSTEM_AUDIO,
+    INPUT
+}
+
 abstract class AudioSource(val name: String) {
 
     open val identity: String get() = name
+
+    /**
+     * Describes what the source captures so clients can guide people toward
+     * a loopback device without relying on a device name heuristic.
+     */
+    open val kind: AudioSourceKind get() = AudioSourceKind.INPUT
 
     abstract fun getAudioFormats(): List<AudioFormat>
 }
