@@ -35,7 +35,6 @@
     }
   },
   "library": {
-    "dbPath": "~/.audiodragon.sqlite",
     "scanThreads": -1
   },
   "settingsVersion": 1

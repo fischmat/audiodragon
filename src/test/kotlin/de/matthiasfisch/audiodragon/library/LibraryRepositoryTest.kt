@@ -14,10 +14,8 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
-import org.flywaydb.core.Flyway
 import java.awt.Color
 import java.awt.image.BufferedImage
-import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.Instant
 import kotlin.io.path.absolutePathString
@@ -25,8 +23,7 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 class LibraryRepositoryTest : FunSpec({
-    val sqliteFile = Files.createTempFile("LibraryRepositoryTest", ".sqlite")
-    val subject = LibraryRepository(sqliteFile)
+    lateinit var subject: LibraryRepository
 
     fun createImage(): BufferedImage {
         val image = BufferedImage(300, 300, BufferedImage.TYPE_INT_RGB)
@@ -84,11 +81,11 @@ class LibraryRepositoryTest : FunSpec({
     }
 
     beforeEach {
-        val flyway = Flyway.configure().dataSource("jdbc:sqlite:${sqliteFile.absolutePathString()}", "", "")
-            .cleanDisabled(false)
-            .load()
-        flyway.clean()
-        flyway.migrate()
+        subject = LibraryRepository("library-repository-test-${java.util.UUID.randomUUID()}")
+    }
+
+    afterEach {
+        subject.close()
     }
 
     context("getItem") {

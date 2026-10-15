@@ -10,6 +10,7 @@ import de.matthiasfisch.audiodragon.library.peristence.SortOrder
 import de.matthiasfisch.audiodragon.library.watchLibraryDirectory
 import de.matthiasfisch.audiodragon.types.LibraryItemDTO
 import mu.KotlinLogging
+import jakarta.annotation.PreDestroy
 import org.springframework.stereotype.Service
 import java.io.OutputStream
 import java.nio.file.Path
@@ -23,9 +24,7 @@ private val LOGGER = KotlinLogging.logger {}
 
 @Service
 class LibraryService(private val libraryEventBroker: LibraryEventBroker, private val settingsService: SettingsService) {
-    private val libraryPersistence = with(settingsService.settings) {
-        LibraryRepository(library.databasePath())
-    }
+    private val libraryPersistence = LibraryRepository()
     private val libraryScanExecutor = with(settingsService.settings) {
         val numThreads = if (library.scanThreads > 0) library.scanThreads else Runtime.getRuntime().availableProcessors()
         Executors.newFixedThreadPool(numThreads)
@@ -103,5 +102,11 @@ class LibraryService(private val libraryEventBroker: LibraryEventBroker, private
             }
         }
         watchLibraryDirectory(settingsService.settings.output.path, executor = libraryScanExecutor, callback = libraryWatcher)
+    }
+
+    @PreDestroy
+    fun close() {
+        libraryScanExecutor.shutdown()
+        libraryPersistence.close()
     }
 }
