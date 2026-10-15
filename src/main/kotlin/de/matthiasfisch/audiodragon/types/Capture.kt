@@ -23,7 +23,10 @@ data class StartCaptureInstructionDTO(
 )
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", defaultImpl = MP3OptionsDTO::class)
-@JsonSubTypes(JsonSubTypes.Type(value = MP3OptionsDTO::class, name = "mp3"))
+@JsonSubTypes(
+    JsonSubTypes.Type(value = MP3OptionsDTO::class, name = "mp3"),
+    JsonSubTypes.Type(value = WavOptionsDTO::class, name = "wav")
+)
 interface FileOutputOptionsDTO
 
 data class MP3OptionsDTO(
@@ -32,3 +35,9 @@ data class MP3OptionsDTO(
     val quality: Int,
     val vbr: Boolean
 ): FileOutputOptionsDTO
+
+/**
+ * Stores the captured PCM stream without lossy encoding. WAV output preserves
+ * the recording's selected sample rate, channels and sample size.
+ */
+class WavOptionsDTO : FileOutputOptionsDTO

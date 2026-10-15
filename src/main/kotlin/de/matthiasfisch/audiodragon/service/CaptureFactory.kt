@@ -11,6 +11,7 @@ import de.matthiasfisch.audiodragon.core.recognition.musicbrainz.MusicBrainzTrac
 import de.matthiasfisch.audiodragon.core.recognition.shazam.RapidApiShazamTrackRecognizer
 import de.matthiasfisch.audiodragon.core.splitting.TrackBoundsDetector
 import de.matthiasfisch.audiodragon.core.writer.MP3FileWriter
+import de.matthiasfisch.audiodragon.core.writer.WavFileWriter
 import de.matthiasfisch.audiodragon.types.FileOutputOptionsDTO
 import de.matthiasfisch.audiodragon.types.MP3OptionsDTO
 import de.matthiasfisch.audiodragon.types.Settings
@@ -113,6 +114,8 @@ class CaptureFactory(
                 output.encodingChunkLengthMs.milliseconds,
                 output.coverartMaxDimension
             )
+
+            is WavOptionsDTO -> WavFileWriter(output.path)
 
             else -> throw IllegalStateException("Unknown file output type ${fileOutputOptions.javaClass.simpleName}")
         }
