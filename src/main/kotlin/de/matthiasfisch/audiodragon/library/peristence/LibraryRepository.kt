@@ -20,11 +20,22 @@ import java.sql.Timestamp
 import javax.imageio.ImageIO
 import kotlin.io.path.absolutePathString
 import kotlin.time.Duration.Companion.milliseconds
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 private val LOGGER = KotlinLogging.logger {}
 
-class LibraryRepository(dbFilePath: Path) {
-    private val jdbcUrl = "jdbc:sqlite:${dbFilePath.absolutePathString()}"
+/**
+ * A process-local library index.
+ *
+ * The named, shared in-memory URL lets Flyway and the repository connection see
+ * the same database. The anchor connection must remain open because SQLite
+ * destroys a shared in-memory database after its last connection is closed.
+ */
+class LibraryRepository(databaseName: String = "audiodragon-library") : AutoCloseable {
+    private val jdbcUrl = "jdbc:sqlite:file:$databaseName?mode=memory&cache=shared"
+    private val connection = DriverManager.getConnection(jdbcUrl)
+    private val transactionLock = ReentrantLock(true)
 
     init {
         System.setProperty("org.jooq.no-logo", "true")
@@ -187,7 +198,7 @@ class LibraryRepository(dbFilePath: Path) {
         }
     }
 
-    private fun getGenres(ctx: Configuration, path: Path) = txn {
+    private fun getGenres(ctx: Configuration, path: Path) =
         DSL.using(ctx)
             .selectFrom(Tables.Genres.table)
             .where(Tables.Genres.PATH_FIELD.eq(path.absolutePathString()))
@@ -196,9 +207,8 @@ class LibraryRepository(dbFilePath: Path) {
             .map {
                 it.get(Tables.Genres.NAME_FIELD)
             }
-    }
 
-    private fun getLabels(ctx: Configuration, path: Path) = txn {
+    private fun getLabels(ctx: Configuration, path: Path) =
         DSL.using(ctx)
             .selectFrom(Tables.Labels.table)
             .where(Tables.Labels.PATH_FIELD.eq(path.absolutePathString()))
@@ -207,7 +217,6 @@ class LibraryRepository(dbFilePath: Path) {
             .map {
                 it.get(Tables.Labels.NAME_FIELD)
             }
-    }
 
     private fun recordToLibraryItem(record: Record, genres: List<String>, labels: List<String>): LibraryItem {
         val filePath = Paths.get(record.get(Tables.LibraryItems.FILE_PATH_FIELD))
@@ -252,10 +261,15 @@ class LibraryRepository(dbFilePath: Path) {
         }
     }
 
-    private fun <T> txn(action: (Configuration) -> T): T =
-        DriverManager.getConnection(jdbcUrl, "", "").use {
-            DSL.using(it).transactionResult(action)
+    private fun <T> txn(action: (Configuration) -> T): T = transactionLock.withLock {
+        DSL.using(connection).transactionResult(action)
+    }
+
+    override fun close() {
+        transactionLock.withLock {
+            connection.close()
         }
+    }
 }
 
 enum class LibraryItemSortField(val tableField: Field<*>) {
