@@ -42,7 +42,7 @@ allprojects {
 }
 
 dependencies {
-	implementation(project(":fft"))
+	implementation("com.github.wendykierp:JTransforms:3.1")
 
 	// Spring
 	implementation("org.springframework.boot:spring-boot-starter-web")

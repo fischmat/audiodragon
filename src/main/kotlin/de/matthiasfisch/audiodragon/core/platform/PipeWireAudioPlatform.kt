@@ -135,7 +135,7 @@ private class PipeWireRecording(
                 return
             }
             val frameSize = audioFormat.frameSize
-            val framesPerBlock = Integer.highestOneBit((blockSize / frameSize).coerceAtLeast(1))
+            val framesPerBlock = (blockSize / frameSize).coerceAtLeast(1)
             val buffer = ByteArray(framesPerBlock * frameSize)
             var pending = 0
             while (!isStopRequested()) {
@@ -178,16 +178,8 @@ private class PipeWireRecording(
     }
 
     private fun publishRemainingFrames(publisher: PublishProcessor<AudioChunk>, buffer: ByteArray, count: Int) {
-        var remainingFrames = count / audioFormat.frameSize
-        var offset = 0
-        // Tail chunks must also have power-of-two frame counts for frequency analysis.
-        while (remainingFrames > 0) {
-            val frames = Integer.highestOneBit(remainingFrames)
-            val bytes = frames * audioFormat.frameSize
-            publish(publisher, buffer.copyOfRange(offset, offset + bytes))
-            offset += bytes
-            remainingFrames -= frames
-        }
+        val completeFrameBytes = count - (count % audioFormat.frameSize)
+        if (completeFrameBytes > 0) publish(publisher, buffer.copyOf(completeFrameBytes))
     }
 }
 
