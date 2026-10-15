@@ -35,6 +35,7 @@ class PipeWireAudioPlatformTest : FunSpec({
         ]""")
         sources.size shouldBe 2
         sources.map { it.name } shouldBe listOf("Monitor of Speakers", "Monitor of Speakers")
+        sources.map { it.kind } shouldBe listOf(AudioSourceKind.SYSTEM_AUDIO, AudioSourceKind.SYSTEM_AUDIO)
         String(Base64.getDecoder().decode(sources[0].getId())) shouldBe "pipewire:a.monitor"
         (sources[0].getId() == sources[1].getId()) shouldBe false
         PipeWireAudioSource("a.monitor", "Renamed", 44100).getId() shouldBe sources[0].getId()
