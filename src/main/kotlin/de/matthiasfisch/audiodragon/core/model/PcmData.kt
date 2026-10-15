@@ -3,8 +3,6 @@ package de.matthiasfisch.audiodragon.core.model
 import de.matthiasfisch.audiodragon.core.util.durationToByteCount
 import de.matthiasfisch.audiodragon.core.util.getEffectiveFrameRate
 import de.matthiasfisch.audiodragon.core.util.getEffectiveFrameSize
-import de.matthiasfisch.audiodragon.fft.JavaFFT
-import io.reactivex.internal.util.Pow2.isPowerOfTwo
 import java.math.BigInteger
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -34,11 +32,11 @@ fun PcmData.timeSlice(audioFormat: AudioFormat, offset: Duration, length: Durati
 }
 
 fun PcmData.getFrequencies(audioFormat: AudioFormat): DoubleArray {
-    return JavaFFT.getFrequencies(averagedFloats(audioFormat).toFloatArray())
+    return FrequencySpectrum.magnitudes(averagedFloats(audioFormat).toFloatArray())
 }
 
 fun PcmData.getFrequenciesPerChannel(audioFormat: AudioFormat) =
-    floatsPerChannel(audioFormat).map { JavaFFT.getFrequencies(it.toFloatArray()) }
+    floatsPerChannel(audioFormat).map { FrequencySpectrum.magnitudes(it.toFloatArray()) }
 
 fun PcmData.getRMS(audioFormat: AudioFormat) = getRMSPerChannel(audioFormat).average()
 
@@ -116,12 +114,12 @@ class FrequencyAccumulator(private val audioFormat: AudioFormat, private val chu
         accumulatingFloats.addAll(pcm.averagedFloats(audioFormat))
         accumulatedChunks++
 
-        if (accumulatedChunks >= chunksToAccumulate && isPowerOfTwo(accumulatingFloats.size)) {
+        if (accumulatedChunks >= chunksToAccumulate) {
             currentFloats = accumulatingFloats
             accumulatingFloats = mutableListOf()
             accumulatedChunks = 0
         }
     }
 
-    fun getFrequencies(): DoubleArray = JavaFFT.getFrequencies((currentFloats?:accumulatingFloats).toFloatArray())
+    fun getFrequencies(): DoubleArray = FrequencySpectrum.magnitudes((currentFloats?:accumulatingFloats).toFloatArray())
 }

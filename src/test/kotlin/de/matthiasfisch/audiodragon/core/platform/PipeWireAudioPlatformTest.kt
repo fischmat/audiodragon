@@ -94,9 +94,9 @@ class PipeWireAudioPlatformTest : FunSpec({
     }
 
     for (bits in listOf(16, 24, 32)) {
-        test("$bits-bit fragmented PCM is preserved byte-for-byte in power-of-two frame blocks") {
+        test("$bits-bit fragmented PCM is preserved byte-for-byte in frame-aligned blocks") {
             val format = AudioFormat(48000f, bits, 2, true, false)
-            val frames = Integer.highestOneBit(2048 / format.frameSize)
+            val frames = 2048 / format.frameSize
             val bytes = ByteArray(frames * format.frameSize * 2) { (it % 251).toByte() }
             val process = FakeProcess(FragmentedInput(bytes), ByteArray(100000) { 1 })
             var command = emptyList<String>()
@@ -228,7 +228,7 @@ class PipeWireAudioPlatformTest : FunSpec({
         error.cause!!.message shouldContain "3 incomplete frame bytes"
         error.cause!!.message shouldContain "server disconnected"
         recording.getAudio().get().toArray().map { it as Byte }.toByteArray() shouldBe bytes.copyOf(18)
-        chunkSizes shouldBe listOf(12, 6)
+        chunkSizes shouldBe listOf(18)
         process.destroyed shouldBe true
     }
 
