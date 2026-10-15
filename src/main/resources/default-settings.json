@@ -2,6 +2,7 @@
   "recognition": {
     "recognizer": "shazam",
     "rapidApiToken": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "rapidApiTokenEnvironment": "AUDIODRAGON_RAPID_API_TOKEN",
     "secondsUntilRecognition": 20,
     "sampleSeconds": 5,
     "maxRetries": 3,

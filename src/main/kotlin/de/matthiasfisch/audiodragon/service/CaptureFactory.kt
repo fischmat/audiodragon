@@ -79,7 +79,7 @@ class CaptureFactory(
         val additionalProcessors = recognition.postprocessors.map { getRecognitionPostprocessor(it) }
         when (recognition) {
             is ShazamRecognitionSettings -> RapidApiShazamTrackRecognizer(
-                recognition.rapidApiToken,
+                recognition.resolveRapidApiToken(),
                 recognition.secondsUntilRecognition.seconds,
                 recognition.sampleSeconds.seconds,
                 recognition.maxRetries,
