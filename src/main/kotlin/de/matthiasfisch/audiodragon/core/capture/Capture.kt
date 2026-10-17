@@ -100,6 +100,14 @@ class Capture constructor(
         trackData!!
     }
 
+    /**
+     * Ends and writes the audio collected so far, allowing callers to mark a
+     * track boundary even when silence detection cannot find one.
+     *
+     * @return true when audio was written, or false when no audio was pending.
+     */
+    fun markTrackBoundary(): Boolean = writeCurrentTrack()
+
     private fun onTrackStarted() {
         events.trackStarted()
 
@@ -116,18 +124,26 @@ class Capture constructor(
     }
 
     private fun onTrackEnded() {
-        events.trackEnded()
+        writeCurrentTrack()
+        if (stopRequested) {
+            stop()
+        }
+    }
 
+    private fun writeCurrentTrack(): Boolean {
         val audio = recording.reset()
+        if (audio.size() == 0L) {
+            audio.close()
+            return false
+        }
+
+        events.trackEnded()
         val trackData = this.trackData
         trackDataLock.withLock {
             this.trackData = null
         }
         fileWriter.writeToFileAsync(audio, trackData)
             .thenAccept { events.trackWritten(it) }
-
-        if (stopRequested) {
-            stop()
-        }
+        return true
     }
 }
