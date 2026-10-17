@@ -1,16 +1,21 @@
 package de.matthiasfisch.audiodragon.types
 
 import de.matthiasfisch.audiodragon.core.model.AudioSource
+import de.matthiasfisch.audiodragon.core.model.AudioSourceKind
 import de.matthiasfisch.audiodragon.util.getId
 import javax.sound.sampled.AudioFormat
 
 data class AudioSourceDTO(
     val id: String,
-    val name: String
+    val name: String,
+    val kind: AudioSourceKind,
+    val recommended: Boolean
 ) {
     constructor(audioSource: AudioSource) : this(
         audioSource.getId(),
-        audioSource.name
+        audioSource.name,
+        audioSource.kind,
+        audioSource.kind == AudioSourceKind.SYSTEM_AUDIO
     )
 }
 

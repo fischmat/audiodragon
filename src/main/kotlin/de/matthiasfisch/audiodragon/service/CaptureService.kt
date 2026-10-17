@@ -18,7 +18,8 @@ class CaptureService(
     val settingsService: SettingsService,
     val captureEventBroker: CaptureEventBroker,
     val audioPlatformService: AudioPlatformService,
-    val captureFactory: CaptureFactory
+    val captureFactory: CaptureFactory,
+    val audioPreviewService: AudioPreviewService
 ) {
     private val ongoingCaptures = mutableMapOf<AudioSourceId, Capture>()
 
@@ -28,6 +29,7 @@ class CaptureService(
         recognizeSongs: Boolean,
         fileOutputOptions: FileOutputOptionsDTO
     ) = synchronized(ongoingCaptures) {
+        audioPreviewService.stop()
         if (ongoingCaptures.containsKey(audioSource.getId())) {
             throw CaptureOngoingException(audioSource)
         }
@@ -60,5 +62,10 @@ class CaptureService(
     fun cancelStopRequest(audioSourceId: AudioSourceId) = synchronized(ongoingCaptures) {
         val capture = ongoingCaptures[audioSourceId] ?: throw NoCaptureOngoingException(audioPlatformService.getAudioSource(audioSourceId))
         capture.cancelStop()
+    }
+
+    fun retryRecognition(audioSource: AudioSource) = synchronized(ongoingCaptures) {
+        val capture = ongoingCaptures[audioSource.getId()] ?: throw NoCaptureOngoingException(audioSource)
+        capture.retryRecognition()
     }
 }

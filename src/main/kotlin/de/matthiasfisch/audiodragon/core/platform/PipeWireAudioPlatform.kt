@@ -97,6 +97,7 @@ internal class PipeWireAudioSource(
     private val sampleRate: Int
 ) : AudioSource(name) {
     override val identity get() = "pipewire:$monitorName"
+    override val kind get() = AudioSourceKind.SYSTEM_AUDIO
 
     override fun getAudioFormats(): List<AudioFormat> = listOf(2, 1).flatMap { channels ->
         listOf(32, 24, 16).map { bits ->

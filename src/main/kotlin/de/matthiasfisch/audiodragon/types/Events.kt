@@ -10,6 +10,7 @@ import java.time.Instant
     JsonSubTypes.Type(value = TrackStartedEventDTO::class, name = "trackStarted"),
     JsonSubTypes.Type(value = TrackEndedEventDTO::class, name = "trackEnded"),
     JsonSubTypes.Type(value = TrackRecognitionEventDTO::class, name = "trackRecognized"),
+    JsonSubTypes.Type(value = TrackRecognitionFailedEventDTO::class, name = "trackRecognitionFailed"),
     JsonSubTypes.Type(value = TrackWrittenEventDTO::class, name = "trackWritten"),
     JsonSubTypes.Type(value = CaptureStartedEventDTO::class, name = "captureStarted"),
     JsonSubTypes.Type(value = CaptureEndedEventDTO::class, name = "captureEnded"),
@@ -30,6 +31,8 @@ class TrackStartedEventDTO(capture: CaptureDTO) : CaptureEventDTO(capture)
 class TrackEndedEventDTO(capture: CaptureDTO) : CaptureEventDTO(capture)
 
 class TrackRecognitionEventDTO(capture: CaptureDTO, val track: TrackData) : CaptureEventDTO(capture)
+
+class TrackRecognitionFailedEventDTO(capture: CaptureDTO) : CaptureEventDTO(capture)
 
 class TrackWrittenEventDTO(capture: CaptureDTO, val path: String) : CaptureEventDTO(capture)
 
@@ -69,5 +72,7 @@ data class AudioMetricsEventDTO(
     val rms: Double,
     val trackTime: Long,
     val frequencies: List<Double>,
-    val buffer: BufferStats
+    val buffer: BufferStats,
+    val sourceId: String? = null,
+    val preview: Boolean = false
 ): EventDTO()
