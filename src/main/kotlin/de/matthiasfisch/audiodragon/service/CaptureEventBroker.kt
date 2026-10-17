@@ -41,6 +41,9 @@ class CaptureEventBroker(val template: SimpMessagingTemplate) {
             capture.events.trackRecognizedEvents().subscribe {
                 publishEvent(TrackRecognitionEventDTO(captureDTO, it))
             },
+            capture.events.trackRecognitionFailedEvents().subscribe {
+                publishEvent(TrackRecognitionFailedEventDTO(captureDTO))
+            },
             capture.events.trackWrittenEvents().subscribe {
                 publishEvent(TrackWrittenEventDTO(captureDTO, it.absolutePathString()))
             },

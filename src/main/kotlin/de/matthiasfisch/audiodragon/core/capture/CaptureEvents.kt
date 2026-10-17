@@ -9,6 +9,7 @@ class CaptureEvents {
     private val trackStartedPublisher = PublishProcessor.create<Unit>()
     private val trackEndedPublisher = PublishProcessor.create<Unit>()
     private val trackRecognizedPublisher = PublishProcessor.create<TrackData>()
+    private val trackRecognitionFailedPublisher = PublishProcessor.create<Unit>()
     private val trackWrittenPublisher = PublishProcessor.create<Path>()
     private val captureStartedPublisher = PublishProcessor.create<Unit>()
     private val captureStoppedPublisher = PublishProcessor.create<Unit>()
@@ -24,6 +25,10 @@ class CaptureEvents {
 
     fun trackRecognized(trackData: TrackData) {
         trackRecognizedPublisher.onNext(trackData)
+    }
+
+    fun trackRecognitionFailed() {
+        trackRecognitionFailedPublisher.onNext(Unit)
     }
 
     fun trackWritten(path: Path) {
@@ -45,6 +50,7 @@ class CaptureEvents {
     fun trackStartEvents() = Flowable.fromPublisher(trackStartedPublisher)
     fun trackEndedEvents() = Flowable.fromPublisher(trackEndedPublisher)
     fun trackRecognizedEvents() = Flowable.fromPublisher(trackRecognizedPublisher)
+    fun trackRecognitionFailedEvents() = Flowable.fromPublisher(trackRecognitionFailedPublisher)
     fun trackWrittenEvents() = Flowable.fromPublisher(trackWrittenPublisher)
     fun captureStartedEvents() = Flowable.fromPublisher(captureStartedPublisher)
     fun captureStoppedEvents() = Flowable.fromPublisher(captureStoppedPublisher)
