@@ -49,11 +49,6 @@ class CaptureController(val captureService: CaptureService, val audioPlatformSer
         captureService.cancelStopRequest(audioSourceId)
     }
 
-    @PostMapping("/{audioSourceId}/retry-recognition")
-    fun retryRecognition(@PathVariable("audioSourceId") audioSourceId: AudioSourceId) {
-        captureService.retryRecognition(audioPlatformService.getAudioSource(audioSourceId))
-    }
-
     private fun getCaptureForId(audioSourceId: AudioSourceId) = captureService.getOngoingCapture(audioPlatformService.getAudioSource(audioSourceId))
         ?: throw NoCaptureOngoingException(
             audioPlatformService.getAudioSource(audioSourceId)
