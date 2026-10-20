@@ -63,9 +63,4 @@ class CaptureService(
         val capture = ongoingCaptures[audioSourceId] ?: throw NoCaptureOngoingException(audioPlatformService.getAudioSource(audioSourceId))
         capture.cancelStop()
     }
-
-    fun retryRecognition(audioSource: AudioSource) = synchronized(ongoingCaptures) {
-        val capture = ongoingCaptures[audioSource.getId()] ?: throw NoCaptureOngoingException(audioSource)
-        capture.retryRecognition()
-    }
 }

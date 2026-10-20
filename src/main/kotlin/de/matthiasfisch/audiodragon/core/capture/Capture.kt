@@ -103,7 +103,13 @@ class Capture constructor(
     private fun onTrackStarted() {
         events.trackStarted()
 
-        recognizeCurrentTrack()
+        trackRecognizer?.recognizeTrack { recording.getAudio() }
+            ?.thenAccept { trackData ->
+                trackData?.let {
+                    events.trackRecognized(trackData)
+                    mergeTrackData(it)
+                }
+            }
 
         // Reset buffer to be sure that there is no initial silence
         recording.reset()
@@ -123,19 +129,5 @@ class Capture constructor(
         if (stopRequested) {
             stop()
         }
-    }
-
-    fun retryRecognition() = recognizeCurrentTrack()
-
-    private fun recognizeCurrentTrack() {
-        trackRecognizer?.recognizeTrack { recording.getAudio() }
-            ?.whenComplete { trackData, error ->
-                if (error != null || trackData == null) {
-                    events.trackRecognitionFailed()
-                } else {
-                    events.trackRecognized(trackData)
-                    mergeTrackData(trackData)
-                }
-            }
     }
 }
