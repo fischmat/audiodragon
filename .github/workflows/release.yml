@@ -10,11 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           lfs: true
+          submodules: recursive
       - name: Set up JDK 21
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'corretto'
@@ -26,23 +27,29 @@ jobs:
     needs: test
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           lfs: true
+          submodules: recursive
       - name: Set up JDK 21
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'corretto'
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 16
-      - run: cd ${{ github.workspace }}
       - run: ./build.sh
+      - run: npm ci --prefix desktop
+      - run: npm test --prefix desktop
+      - run: npm run package:linux --prefix desktop
       - run: |
           PROJECT_NAME=$(./gradlew properties -q | grep "^name:" | awk '{print $2}')
           PROJECT_VERSION=$(./gradlew properties -q | grep "^version:" | awk '{print $2}')
           cp build/libs/$PROJECT_NAME-$PROJECT_VERSION.jar audiodragon-${{ github.ref_name }}.jar
+          APPIMAGE=$(find desktop/dist -maxdepth 1 -type f -name '*.AppImage' -print -quit)
+          test -n "$APPIMAGE"
+          cp "$APPIMAGE" audiodragon-desktop-${{ github.ref_name }}.AppImage
       - name: Update CHANGELOG
         id: changelog
         uses: requarks/changelog-action@v1
@@ -70,3 +77,12 @@ jobs:
           asset_path: ./audiodragon-${{ github.ref_name }}.jar
           asset_name: audiodragon-${{ github.ref_name }}.jar
           asset_content_type: application/java-archive
+      - name: Upload Linux Desktop Artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./audiodragon-desktop-${{ github.ref_name }}.AppImage
+          asset_name: audiodragon-desktop-${{ github.ref_name }}.AppImage
+          asset_content_type: application/octet-stream

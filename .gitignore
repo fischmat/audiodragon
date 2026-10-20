@@ -38,3 +38,8 @@ out/
 
 ### Client ###
 src/main/resources/static
+
+### Desktop packaging ###
+desktop/node_modules/
+desktop/dist/
+desktop/resources/

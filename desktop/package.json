@@ -1,0 +1,52 @@
+{
+  "name": "audiodragon-desktop",
+  "version": "0.2.1",
+  "private": true,
+  "description": "Desktop launcher for AudioDragon",
+  "main": "main.js",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "prepare:server": "node scripts/prepare-server.js",
+    "package:linux": "npm run prepare:server && electron-builder --linux AppImage --publish never",
+    "package:mac": "npm run prepare:server && electron-builder --mac --publish never",
+    "package:win": "npm run prepare:server && electron-builder --win --publish never"
+  },
+  "devDependencies": {
+    "electron": "28.3.3",
+    "electron-builder": "24.13.3",
+    "sharp": "0.32.6"
+  },
+  "build": {
+    "appId": "de.matthiasfisch.audiodragon",
+    "productName": "AudioDragon",
+    "asar": true,
+    "files": [
+      "main.js",
+      "launcher.js",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/audiodragon.jar",
+        "to": "server/audiodragon.jar"
+      }
+    ],
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "AudioVideo",
+      "icon": "resources/icon.png"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    }
+  }
+}
