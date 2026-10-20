@@ -22,22 +22,20 @@ echo "Project directory is $PROJECT_ROOT"
 echo "Fetching Git LFS build artifacts"
 git -C "$PROJECT_ROOT" lfs pull --include="gradle/wrapper/gradle-wrapper.jar,libs/java-lame-3.98.4.jar"
 
-PROJECT_NAME=$(./gradlew properties -q | grep "^name:" | awk '{print $2}')
-PROJECT_VERSION=$(./gradlew properties -q | grep "^version:" | awk '{print $2}')
+PROJECT_NAME="$("$PROJECT_ROOT/gradlew" properties -q | grep "^name:" | awk '{print $2}')"
+PROJECT_VERSION="$("$PROJECT_ROOT/gradlew" properties -q | grep "^version:" | awk '{print $2}')"
 CLIENT_SUBMODULE_PATH="$PROJECT_ROOT/audiodragon-client"
 
 echo "Building $PROJECT_NAME - version $PROJECT_VERSION"
 
-echo "1. Checking out submodule"
-git pull --recurse-submodules
-git submodule update --init --recursive
+echo "1. Initializing pinned submodule revision"
+git -C "$PROJECT_ROOT" submodule update --init --recursive
 
 echo "2. Building client"
 cd "$CLIENT_SUBMODULE_PATH" || exit 1
-npm install
+npm ci
 npm run build
 cd - || exit 1
-rm package-lock.json
 
 echo "3. Copying client"
 CLIENT_DIST_PATH="$CLIENT_SUBMODULE_PATH/dist"
