@@ -35,6 +35,11 @@ class CaptureController(val captureService: CaptureService, val audioPlatformSer
     fun updateCurrentTrack(@PathVariable("audioSourceId") audioSourceId: AudioSourceId, @RequestBody trackData: TrackData) =
         getCaptureForId(audioSourceId).mergeTrackData(trackData)
 
+    /** Manually split and save the audio recorded so far. */
+    @PostMapping("/{audioSourceId}/track/boundary")
+    fun markTrackBoundary(@PathVariable("audioSourceId") audioSourceId: AudioSourceId) =
+        getCaptureForId(audioSourceId).markTrackBoundary()
+
     @DeleteMapping("/{audioSourceId}")
     fun stopRecording(@PathVariable("audioSourceId") audioSourceId: AudioSourceId, @RequestParam(required = false) immediately: Boolean?) {
         if (immediately != false) {
